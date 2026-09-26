@@ -166,7 +166,32 @@ function missing(){return pageBox('اطلب الصنف الناقص','اكتب �
 function videos(){return pageBox('فيديوهات كايرو كير','الفيديوهات التي أضافتها الإدارة.',`<div class=videoGrid>${D.videos.map(v=>`<div class=videoCard>${v.type==='video'?`<video class=video controls src="${v.url}"></video>`:`<a href="${v.url}" target="_blank">فتح الفيديو</a>`}<h3>${esc(v.title)}</h3></div>`).join('')||'<p>لا توجد فيديوهات.</p>'}</div>`)}
 function adminLogin(){return pageBox('دخول الإدارة','عاصم والمديرون المضافون.',`<form class=form><label>اسم المدير<input id=an></label><label>الرمز<input id=ac type=password></label><button type=button class=primary onclick="doAdmin()">دخول الإدارة</button></form>`)}function doAdmin(){let a=D.admins.find(x=>x.name===an.value&&x.code===ac.value);if(!a)return toast('اسم المدير أو الرمز غير صحيح');admin=a;setPage('admin')}
 let atab='clients';function can(k){return admin?.owner||admin?.permissions?.[k]}function adminPage(){if(!can(atab))atab=['clients','orders','products','videos','missing','settings','admins'].find(can)||'clients';let tabs=[['clients','العملاء'],['orders','الطلبات'],['products','المنتجات'],['videos','الفيديوهات'],['missing','الأصناف الناقصة'],['settings','الإعدادات'],['admins','المديرين']].filter(x=>can(x[0]));return pageBox('لوحة الإدارة — '+esc(admin.name),admin.owner?'عاصم لديه كل الصلاحيات':'صلاحياتك محددة من عاصم',`<div class=adminTabs>${tabs.map(x=>`<button class="chip ${atab===x[0]?'active':''}" onclick="atab='${x[0]}';render()">${x[1]}</button>`).join('')}</div>${adminTabBody()}`)}function adminTabBody(){if(atab==='clients')return clientsAdmin();if(atab==='orders')return ordersAdmin();if(atab==='products')return productsAdmin();if(atab==='videos')return videosAdmin();if(atab==='missing')return missingAdmin();if(atab==='settings')return settingsAdmin();return managersAdmin()}
-function clientsAdmin(){let q=document.getElementById('cq')?.value||'';let cs=D.clients.filter(c=>(c.name+' '+c.phone+' '+c.business).includes(q));return `<input id=cq class=search value="${esc(q)}" oninput="render()" placeholder="🔎 ابحث عن العميل"><div class=adminList>${cs.map(c=>{let os=D.orders.filter(o=>o.clientId===c.id);return `<div class=adminCard><div><b>${esc(c.name)}</b><p>${esc(c.business)} — ${c.activity}</p><small>${c.phone} — ${esc(c.address)}</small><p>عدد الطلبات: ${os.length} | إجمالي المسحوب: ${os.reduce((s,o)=>s+o.total,0)} جنيه</p></div><div><span class=status>${c.status}</span>${admin.owner&&c.status==='pending'?`<div style="margin-top:12px;display:flex;gap:8px"><button class="primary" onclick="approve('${c.id}')">✅ قبول</button><button class="danger" onclick="reject('${c.id}')">❌ رفض</button></div>`:''}</div></div>`}).join('')}</div>`}async function approve(id){
+function clientsAdmin(){let q=document.getElementById('cq')?.value||'';let cs=D.clients.filter(c=>(c.name+' '+c.phone+' '+c.business).includes(q));return `<button class="primary wide" onclick="loadRemoteClients()">🔄 تحديث العملاء من قاعدة البيانات</button><input id=cq class=search value="${esc(q)}" oninput="render()" placeholder="🔎 ابحث عن العميل"><div class=adminList>${cs.map(c=>{let os=D.orders.filter(o=>o.clientId===c.id);return `<div class=adminCard><div><b>${esc(c.name)}</b><p>${esc(c.business)} — ${c.activity}</p><small>${c.phone} — ${esc(c.address)}</small><p>عدد الطلبات: ${os.length} | إجمالي المسحوب: ${os.reduce((s,o)=>s+o.total,0)} جنيه</p></div><div><span class=status>${c.status}</span>${admin.owner&&c.status==='pending'?`<div style="margin-top:12px;display:flex;gap:8px"><button class="primary" onclick="approve('${c.id}')">✅ قبول</button><button class="danger" onclick="reject('${c.id}')">❌ رفض</button></div>`:''}</div></div>`}).join('')}</div>`}async function loadRemoteClients(){
+  const {data,error}=await supabaseClient
+    .from('clients')
+    .select('*')
+    .order('created_at',{ascending:false});
+
+  if(error){
+    return toast('تعذر تحميل العملاء: '+error.message);
+  }
+
+  D.clients=(data||[]).map(c=>({
+    id:c.id,
+    name:c.name||c.business_name||'',
+    phone:c.phone||'',
+    activity:c.activity||'',
+    business:c.business_name||'',
+    address:c.address||'',
+    status:c.status||'pending'
+  }));
+
+  save();
+  render();
+  toast('تم تحديث العملاء بنجاح ✅');
+}
+
+async function approve(id){
   const {data,error}=await supabaseClient
     .from('clients')
     .update({status:'approved',reviewed_at:new Date().toISOString()})
