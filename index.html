@@ -158,7 +158,39 @@ function missing(){return pageBox('اطلب الصنف الناقص','اكتب �
 function videos(){return pageBox('فيديوهات كايرو كير','الفيديوهات التي أضافتها الإدارة.',`<div class=videoGrid>${D.videos.map(v=>`<div class=videoCard>${v.type==='video'?`<video class=video controls src="${v.url}"></video>`:`<a href="${v.url}" target="_blank">فتح الفيديو</a>`}<h3>${esc(v.title)}</h3></div>`).join('')||'<p>لا توجد فيديوهات.</p>'}</div>`)}
 function adminLogin(){return pageBox('دخول الإدارة','عاصم والمديرون المضافون.',`<form class=form><label>اسم المدير<input id=an></label><label>الرمز<input id=ac type=password></label><button type=button class=primary onclick="doAdmin()">دخول الإدارة</button></form>`)}function doAdmin(){let a=D.admins.find(x=>x.name===an.value&&x.code===ac.value);if(!a)return toast('اسم المدير أو الرمز غير صحيح');admin=a;setPage('admin')}
 let atab='clients';function can(k){return admin?.owner||admin?.permissions?.[k]}function adminPage(){if(!can(atab))atab=['clients','orders','products','videos','missing','settings','admins'].find(can)||'clients';let tabs=[['clients','العملاء'],['orders','الطلبات'],['products','المنتجات'],['videos','الفيديوهات'],['missing','الأصناف الناقصة'],['settings','الإعدادات'],['admins','المديرين']].filter(x=>can(x[0]));return pageBox('لوحة الإدارة — '+esc(admin.name),admin.owner?'عاصم لديه كل الصلاحيات':'صلاحياتك محددة من عاصم',`<div class=adminTabs>${tabs.map(x=>`<button class="chip ${atab===x[0]?'active':''}" onclick="atab='${x[0]}';render()">${x[1]}</button>`).join('')}</div>${adminTabBody()}`)}function adminTabBody(){if(atab==='clients')return clientsAdmin();if(atab==='orders')return ordersAdmin();if(atab==='products')return productsAdmin();if(atab==='videos')return videosAdmin();if(atab==='missing')return missingAdmin();if(atab==='settings')return settingsAdmin();return managersAdmin()}
-function clientsAdmin(){let q=document.getElementById('cq')?.value||'';let cs=D.clients.filter(c=>(c.name+' '+c.phone+' '+c.business).includes(q));return `<input id=cq class=search value="${esc(q)}" oninput="render()" placeholder="🔎 ابحث عن العميل"><div class=adminList>${cs.map(c=>{let os=D.orders.filter(o=>o.clientId===c.id);return `<div class=adminCard><div><b>${esc(c.name)}</b><p>${esc(c.business)} — ${c.activity}</p><small>${c.phone} — ${esc(c.address)}</small><p>عدد الطلبات: ${os.length} | إجمالي المسحوب: ${os.reduce((s,o)=>s+o.total,0)} جنيه</p></div><div>${admin.owner?`<button onclick="approve(${c.id})">قبول</button><button class=danger onclick="reject(${c.id})">رفض</button>`:''}<span class=status>${c.status}</span></div></div>`}).join('')}</div>`}function approve(id){D.clients.find(c=>c.id===id).status='approved';save();render()}function reject(id){D.clients.find(c=>c.id===id).status='rejected';save();render()}
+function clientsAdmin(){let q=document.getElementById('cq')?.value||'';let cs=D.clients.filter(c=>(c.name+' '+c.phone+' '+c.business).includes(q));return `<input id=cq class=search value="${esc(q)}" oninput="render()" placeholder="🔎 ابحث عن العميل"><div class=adminList>${cs.map(c=>{let os=D.orders.filter(o=>o.clientId===c.id);return `<div class=adminCard><div><b>${esc(c.name)}</b><p>${esc(c.business)} — ${c.activity}</p><small>${c.phone} — ${esc(c.address)}</small><p>عدد الطلبات: ${os.length} | إجمالي المسحوب: ${os.reduce((s,o)=>s+o.total,0)} جنيه</p></div><div>${admin.owner?`<button onclick="approve(${c.id})">قبول</button><button class=danger onclick="reject(${c.id})">رفض</button>`:''}<span class=status>${c.status}</span></div></div>`}).join('')}</div>`}async function approve(id){
+  const {data,error}=await supabaseClient
+    .from('clients')
+    .update({status:'approved',reviewed_at:new Date().toISOString()})
+    .eq('id',id)
+    .select()
+    .single();
+
+  if(error)return toast('تعذر الموافقة: '+error.message);
+
+  const c=D.clients.find(x=>x.id===id);
+  if(c)c.status='approved';
+  save();
+  toast('تمت الموافقة على العميل ✅');
+  render();
+}
+
+async function reject(id){
+  const {data,error}=await supabaseClient
+    .from('clients')
+    .update({status:'rejected',reviewed_at:new Date().toISOString()})
+    .eq('id',id)
+    .select()
+    .single();
+
+  if(error)return toast('تعذر رفض العميل: '+error.message);
+
+  const c=D.clients.find(x=>x.id===id);
+  if(c)c.status='rejected';
+  save();
+  toast('تم رفض العميل');
+  render();
+}
 function ordersAdmin(){return `<div class=adminList>${D.orders.slice().reverse().map(o=>`<div class=adminCard><div><b>${o.id}</b><p>${D.clients.find(c=>c.id===o.clientId)?.name||'عميل'} — ${o.total} جنيه</p></div><select onchange="statusOrder(${o.id?o.id:0},this.value)" data-id="${o.id}"><option ${o.status==='جديد'?'selected':''}>جديد</option><option ${o.status==='قيد التجهيز'?'selected':''}>قيد التجهيز</option><option ${o.status==='خرج للتوصيل'?'selected':''}>خرج للتوصيل</option><option ${o.status==='تم التسليم'?'selected':''}>تم التسليم</option><option ${o.status==='ملغي'?'selected':''}>ملغي</option></select></div>`).join('')}</div>`}function statusOrder(_,v){let el=event.target,o=D.orders.find(x=>x.id===el.dataset.id);if(o){o.status=v;save()}}
 function productsAdmin(){return `<div class=adminForm><label>اسم المنتج<input id=pn></label><label>الفئة<input id=pc></label><label>الوصف<input id=pd></label><label>السعر<input id=pp type=number></label><label>الكمية بالمخزن (للإدارة فقط)<input id=ps type=number></label><label>صورة المنتج<input id=pi type=file accept="image/*" onchange="fileData(this,x=>window.pimg=x)"></label><button class=primary onclick="addProductAdmin()">إضافة المنتج</button></div><div class=adminList>${D.products.map(p=>`<div class=adminCard>${p.image?`<img class=thumb src="${p.image}">`:''}<div><b>${esc(p.name)}</b><p>${p.price} جنيه — المخزون: ${p.stock}</p><small>${esc(p.description)}</small></div><button onclick="toggleProduct(${p.id})">${p.active===false?'إظهار':'إخفاء'}</button></div>`).join('')}</div>`}function addProductAdmin(){if(!pn.value||!pp.value||ps.value==='')return toast('اكتب الاسم والسعر والكمية');D.products.push({id:Date.now(),name:pn.value,category:pc.value,description:pd.value,price:+pp.value,stock:+ps.value,image:window.pimg||'',active:true});window.pimg='';save();render()}function toggleProduct(id){let p=D.products.find(x=>x.id===id);p.active=p.active===false;save();render()}
 function videosAdmin(){return `<div class=adminForm><label>اسم الفيديو<input id=vn></label><label>الفيديو من المعرض<input type=file accept="video/*" onchange="fileData(this,x=>{window.vurl=x;window.vtype='video'})"></label><label>أو رابط فيديو<input id=vu></label><button class=primary onclick="addVideoAdmin()">إضافة الفيديو</button></div><div class=videoGrid>${D.videos.map(v=>`<div class=videoCard>${v.type==='video'?`<video class=video controls src="${v.url}"></video>`:`<a href="${v.url}" target="_blank">فتح الفيديو</a>`}<h3>${esc(v.title)}</h3></div>`).join('')}</div>`}function addVideoAdmin(){let url=window.vurl||vu.value;if(!vn.value||!url)return toast('اختار فيديو أو ضع رابطًا');D.videos.push({id:Date.now(),title:vn.value,url,type:window.vtype||'link'});window.vurl='';save();render()}
