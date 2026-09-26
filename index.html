@@ -211,7 +211,31 @@ function settingsAdmin(){return `<form class=form><label>اسم الشركة<inp
     instagram:si.value
   });
 
-  if(window.bg)D.settings.background=window.bg;
+  if(window.bg){
+    const fileInput=document.querySelector('input[type="file"]');
+    const file=fileInput?.files?.[0];
+
+    if(file){
+      const ext=file.name.split('.').pop().toLowerCase() || 'jpg';
+      const fileName='background-' + Date.now() + '.' + ext;
+
+      const {error:uploadError}=await supabaseClient
+        .storage
+        .from('site-assets')
+        .upload(fileName,file,{upsert:true,contentType:file.type});
+
+      if(uploadError){
+        return toast('فشل رفع الخلفية: '+uploadError.message);
+      }
+
+      const {data:urlData}=supabaseClient
+        .storage
+        .from('site-assets')
+        .getPublicUrl(fileName);
+
+      D.settings.background=urlData.publicUrl;
+    }
+  }
 
   await saveRemoteSettings();
 }
