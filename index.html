@@ -70,32 +70,7 @@ async function saveRemoteSettings(){
   render();
 }
 
-async function loadRemoteClients(){
-  const {data,error}=await supabaseClient
-    .from('clients')
-    .select('*')
-    .order('created_at',{ascending:false});
-
-  if(error){
-    console.log('Clients error:',error.message);
-    return;
-  }
-
-  D.clients=(data||[]).map(c=>({
-    id:c.id,
-    name:c.name||c.business_name||'',
-    phone:c.phone||'',
-    activity:c.activity||'',
-    business:c.business_name||'',
-    address:c.address||'',
-    status:c.status||'pending'
-  }));
-
-  save();
-  render();
-}
-
-loadRemoteSettings();\nloadRemoteClients();
+loadRemoteSettings();
 const SUPABASE_URL="https://wmeoudzbtnalthfcumuk.supabase.co"
 const SUPABASE_KEY="sb_publishable_x7lky4gso40A7_WF83PEcA_-ptqxSYJ"
 const supabaseClient=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
