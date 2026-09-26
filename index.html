@@ -120,7 +120,37 @@ function register(){return pageBox('إنشاء حساب','بعد التسجيل 
   toast('تم التسجيل. حسابك الآن تحت المراجعة');
   setPage('login');
 }
-function login(){return pageBox('دخول','اكتب رقم الواتساب الذي سجلت به.',`<form class="form"><label>رقم واتساب<input id=lphone></label><button type=button class="primary wide" onclick="doLogin()">دخول</button><button type=button onclick="setPage('register')">إنشاء حساب جديد</button></form>`)}function doLogin(){let c=D.clients.find(x=>x.phone===lphone.value);if(!c)return toast('الرقم غير مسجل');if(c.status==='pending')return toast('حسابك تحت المراجعة من الإدارة');if(c.status==='rejected')return toast('تم رفض الحساب. تواصل مع الإدارة');client=c;setPage('shop')}
+function login(){return pageBox('دخول','اكتب رقم الواتساب الذي سجلت به.',`<form class="form"><label>رقم واتساب<input id=lphone required></label><button type=button class="primary wide" onclick="doLogin()">دخول</button><button type=button onclick="setPage('register')">إنشاء حساب جديد</button></form>`)}
+
+async function doLogin(){
+  const phone=lphone.value.trim();
+  if(!phone)return toast('اكتب رقم الواتساب');
+
+  const {data,error}=await supabaseClient
+    .from('clients')
+    .select('*')
+    .eq('phone',phone)
+    .maybeSingle();
+
+  if(error)return toast('حدث خطأ أثناء الدخول: '+error.message);
+  if(!data)return toast('الرقم غير مسجل');
+
+  const c={
+    id:data.id,
+    name:data.business_name||'',
+    phone:data.phone,
+    activity:data.activity,
+    business:data.business_name,
+    address:data.address,
+    status:data.status
+  };
+
+  if(c.status==='pending')return toast('حسابك تحت المراجعة من الإدارة');
+  if(c.status==='rejected')return toast('تم رفض الحساب. تواصل مع الإدارة');
+
+  client=c;
+  setPage('shop');
+}
 function shop(){let q=document.getElementById('sq')?.value||'';let arr=D.products.filter(p=>p.active!==false&&(`${p.name} ${p.category} ${p.description}`).toLowerCase().includes(q.toLowerCase()));return pageBox('العروض والمنتجات','ابحث عن الصنف. المخزون الحقيقي لا يظهر للعميل.',`<div class=toolbar><input id=sq class=search value="${esc(q)}" oninput="render()" placeholder="🔎 ابحث مثلاً: كلير"><button class=secondary onclick="setPage('cart')">🛒 السلة (${cart.reduce((a,b)=>a+b.qty,0)})</button></div><div class=grid>${arr.map(p=>`<article class=product>${p.image?`<img class=productImg src="${p.image}">`:'<div class=productImg>🧴</div>'}<small>${esc(p.category)}</small><h3>${esc(p.name)}</h3><p>${esc(p.description)}</p><b>${p.price} جنيه</b><div class=qty><button onclick="changeQty(${p.id},-1)">−</button><b>${cart.find(x=>x.id===p.id)?.qty||1}</b><button onclick="changeQty(${p.id},1)">+</button></div><button class="primary wide" onclick="add(${p.id})">إضافة للطلب</button></article>`).join('')||'<p class=empty>مفيش نتائج مطابقة للبحث.</p>'}</div>`)}function add(id){let p=D.products.find(x=>x.id===id),x=cart.find(y=>y.id===id);if(x)x.qty++;else cart.push({id,qty:1});render()}function changeQty(id,n){let x=cart.find(y=>y.id===id);if(!x){if(n>0)cart.push({id,qty:1});}else{x.qty+=n;if(x.qty<=0)cart=cart.filter(y=>y.id!==id)}render()}
 function cartPage(){let items=cart.map(x=>({...x,p:D.products.find(p=>p.id===x.id)}));let total=items.reduce((s,x)=>s+x.p.price*x.qty,0);return pageBox('السلة','راجع طلبك قبل الإرسال.',`<div>${items.map(x=>`<div class=cartRow><b>${esc(x.p.name)}</b><div class=qty><button onclick="changeQty(${x.id},-1)">−</button><b>${x.qty}</b><button onclick="changeQty(${x.id},1)">+</button></div><strong>${x.p.price*x.qty} ج</strong></div>`).join('')||'<p>السلة فارغة.</p>'}</div><div class=paymentBox>💵 كاش: متاح<br>📸 إنستجرام/تحويل: ${D.settings.instagram}<br>📞 الشكاوى: ${D.settings.whatsapp}</div><div class=total>الإجمالي <b>${total} جنيه</b></div><button class="primary wide" onclick="sendOrder()">إرسال الطلب</button>`)}function sendOrder(){if(!cart.length)return toast('السلة فارغة');let items=cart.map(x=>({productId:x.id,qty:x.qty}));for(let x of items){let p=D.products.find(y=>y.id===x.productId);if(!p||Number(p.stock)<x.qty)return toast('الكمية المطلوبة غير متاحة حاليًا')}items.forEach(x=>D.products.find(p=>p.id===x.productId).stock-=x.qty);D.orders.push({id:'CC-'+Math.floor(100000+Math.random()*899999),clientId:client.id,items,total:items.reduce((s,x)=>s+D.products.find(p=>p.id===x.productId).price*x.qty,0),status:'جديد',createdAt:new Date().toISOString()});cart=[];save();toast('تم إرسال الطلب');setPage('orders')}
 function orders(){let os=D.orders.filter(o=>o.clientId===client.id).reverse();return pageBox('طلباتي','جديد ← قيد التجهيز ← خرج للتوصيل ← تم التسليم',os.map(o=>`<div class=order><b>${o.id}</b> <span class=status>${o.status}</span><p>${o.items.map(i=>{let p=D.products.find(p=>p.id===i.productId);return esc(p?.name||'صنف')+' × '+i.qty}).join('، ')}</p><strong>${o.total} جنيه</strong></div>`).join('')||'<p>لسه مفيش طلبات.</p>')}
@@ -148,4 +178,4 @@ function settingsAdmin(){return `<form class=form><label>اسم الشركة<inp
 function managersAdmin(){let keys=[['clients','العملاء'],['orders','الطلبات'],['products','المنتجات'],['videos','الفيديوهات'],['missing','الأصناف الناقصة'],['settings','الإعدادات']];return `<div class=adminForm><label>اسم المدير<input id=mnm></label><label>رمز المدير<input id=mc></label><button class=primary onclick="addManager()">إضافة مدير</button></div><div class=adminList>${D.admins.map(m=>`<div class=adminCard><div><b>${esc(m.name)}</b><small>${m.owner?'المدير الرئيسي':'مدير تطبيق'}</small>${!m.owner?`<div class=permissions>${keys.map(([k,l])=>`<label><input type=checkbox ${m.permissions[k]?'checked':''} onchange="perm(${m.id},'${k}',this.checked)">${l}</label>`).join('')}</div>`:''}</div></div>`).join('')}</div>`}function addManager(){if(!mnm.value||!mc.value)return toast('اكتب اسم المدير والرمز');D.admins.push({id:Date.now(),name:mnm.value,code:mc.value,owner:false,permissions:{clients:false,orders:true,products:false,videos:false,missing:false,settings:false,admins:false}});save();render()}function perm(id,k,v){let m=D.admins.find(x=>x.id===id);m.permissions[k]=v;save()}
 function logout(){client=null;admin=null;cart=[];setPage('home')}
 function render(){let body=page==='home'?home():page==='register'?register():page==='login'?login():page==='shop'&&client?shop():page==='cart'&&client?cartPage():page==='orders'&&client?orders():page==='missing'&&client?missing():page==='videos'&&client?videos():page==='adminLogin'?adminLogin():page==='admin'&&admin?adminPage():home();document.getElementById('root').innerHTML=`<div class=app style="--bg:${D.settings.background?`url('${D.settings.background}')`: 'linear-gradient(135deg,#fff8ef,#ffe1c5)'}"><div class=wrap>${header()}${body}<div class=foot>كايرو كير — واتساب/شكاوى: ${esc(D.settings.whatsapp)} — التحويل: ${esc(D.settings.instagram)}</div></div></div>`}render();
-</script><script>testSupabase();</script></body></html>
+</script></body></html>
