@@ -2,6 +2,75 @@
 :root{--orange:#e86b19;--dark:#241b17;--cream:#fff8ef;--blue:#62b7e8}*{box-sizing:border-box}body{margin:0;font-family:Arial,Tahoma,sans-serif;background:var(--cream);color:var(--dark)}button,input,select,textarea{font:inherit}button{cursor:pointer;border:0;border-radius:12px;padding:11px 16px}.app{min-height:100vh;background:linear-gradient(#0004,#0004),var(--bg,linear-gradient(135deg,#fff8ef,#ffe1c5)) center/cover fixed}.wrap{max-width:1050px;margin:auto;padding:18px}.top{background:#fff;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;border-radius:18px;position:sticky;top:8px;z-index:4;box-shadow:0 5px 20px #0002}.brand{background:none;padding:0;display:flex;align-items:center;gap:10px}.logo{width:45px;height:45px;border-radius:14px;background:var(--orange);color:#fff;display:grid;place-items:center;font-weight:bold}.brand b{display:block;font-size:20px}.brand small{display:block;color:#777}.nav{display:flex;gap:6px;flex-wrap:wrap}.nav button{background:#f4eee8}.page,.hero{background:#fffffff2;border-radius:25px;margin-top:18px;padding:25px;box-shadow:0 10px 35px #0002}.hero{min-height:70vh;display:grid;grid-template-columns:1.4fr .8fr;gap:25px;align-items:center}.hero h1{font-size:52px;margin:10px 0;color:var(--orange)}h2{margin:8px 0}.heroCard{background:linear-gradient(145deg,#e86b19,#62b7e8);color:#fff;padding:35px;border-radius:25px;text-align:center}.circle{width:110px;height:110px;border-radius:50%;background:#fff;color:var(--orange);display:grid;place-items:center;margin:auto;font-size:35px;font-weight:bold}.actions{display:flex;gap:10px;margin:20px 0;flex-wrap:wrap}.primary{background:var(--orange);color:#fff}.secondary{background:var(--blue);color:#fff}.danger{background:#c62828;color:#fff}.outline{background:#fff;border:1px solid #ddd}.wide{width:100%}.form{max-width:650px;margin:auto;display:grid;gap:13px}.form label,.adminForm label{display:grid;gap:6px;font-weight:bold}.form input,.form select,.adminForm input,.adminForm select,.search{width:100%;padding:12px;border:1px solid #ddd;border-radius:12px;background:#fff}.toolbar{display:flex;gap:10px;margin-bottom:14px}.search{flex:1}.chips{flex-wrap:wrap}.chip{background:#eee}.chip.active{background:var(--orange);color:#fff}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:15px}.product,.adminCard,.order,.cartRow,.videoCard{background:#fff;border:1px solid #eee;border-radius:17px;padding:15px}.productImg{width:100%;height:170px;object-fit:cover;border-radius:13px;background:#f5eee8;display:grid;place-items:center}.qty{display:flex;align-items:center;justify-content:center;gap:18px;margin:12px 0}.qty button{width:40px;height:40px;background:#eee;font-size:22px}.adminTabs{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:15px}.adminList{display:grid;gap:10px;margin-top:15px}.adminCard{display:flex;justify-content:space-between;gap:12px;align-items:center}.rowBtns{display:flex;gap:7px;align-items:center;flex-wrap:wrap}.status{background:#fff0dc;border-radius:999px;padding:7px 10px;display:inline-block}.adminForm{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;background:#fff;border-radius:17px;padding:15px;margin-bottom:15px}.thumb{width:80px;height:80px;object-fit:cover;border-radius:10px}.permissions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.permissions label{font-size:13px}.videoGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:15px}.video{width:100%;max-height:280px;border-radius:12px}.paymentBox{padding:15px;background:#fff5e8;border-radius:14px;margin:15px 0;line-height:2}.total{display:flex;justify-content:space-between;font-size:20px;margin:15px 0}.toast{position:fixed;bottom:25px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:13px 20px;border-radius:999px;z-index:20}.foot{text-align:center;padding:20px;color:#555}.empty{text-align:center;padding:30px}.hidden{display:none!important}@media(max-width:750px){.hero{grid-template-columns:1fr}.hero h1{font-size:38px}.top{position:relative}.nav{justify-content:center}}
 </style><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script></head><body><div id="root"></div><script>
 const KEY='cairo-care-html-v1';const seed={settings:{company:'كايرو كير',slogan:'كايرو كير معاك في كل خطوة',whatsapp:'01000177509',instagram:'01000177509',background:''},clients:[],products:[],orders:[],videos:[],missing:[],admins:[{id:1,name:'عاصم',code:'708090',owner:true,permissions:{clients:true,orders:true,products:true,videos:true,missing:true,settings:true,admins:true}}]};let D=load(),page='home',client=null,admin=null,cart=[];
+
+async function loadRemoteSettings(){
+  const {data,error}=await supabaseClient
+    .from('settings')
+    .select('*')
+    .limit(1)
+    .maybeSingle();
+
+  if(error){
+    console.log('Settings error:',error.message);
+    return;
+  }
+
+  if(data){
+    D.settings={
+      company:data.company||D.settings.company,
+      slogan:data.slogan||D.settings.slogan,
+      whatsapp:data.whatsapp||D.settings.whatsapp,
+      instagram:data.instagram||D.settings.instagram,
+      background:data.background||''
+    };
+    save();
+    render();
+  }
+}
+
+async function saveRemoteSettings(){
+  const {data,error}=await supabaseClient
+    .from('settings')
+    .select('id')
+    .limit(1)
+    .maybeSingle();
+
+  if(error){
+    return toast('خطأ في الإعدادات: '+error.message);
+  }
+
+  const values={
+    company:D.settings.company,
+    slogan:D.settings.slogan,
+    whatsapp:D.settings.whatsapp,
+    instagram:D.settings.instagram,
+    background:D.settings.background||'',
+    updated_at:new Date().toISOString()
+  };
+
+  let result;
+
+  if(data){
+    result=await supabaseClient
+      .from('settings')
+      .update(values)
+      .eq('id',data.id);
+  }else{
+    result=await supabaseClient
+      .from('settings')
+      .insert([values]);
+  }
+
+  if(result.error){
+    return toast('لم يتم حفظ الإعدادات: '+result.error.message);
+  }
+
+  save();
+  toast('تم حفظ الإعدادات للجميع ✅');
+  render();
+}
+
+loadRemoteSettings();
 const SUPABASE_URL="https://wmeoudzbtnalthfcumuk.supabase.co"
 const SUPABASE_KEY="sb_publishable_x7lky4gso40A7_WF83PEcA_-ptqxSYJ"
 const supabaseClient=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
@@ -64,7 +133,18 @@ function ordersAdmin(){return `<div class=adminList>${D.orders.slice().reverse()
 function productsAdmin(){return `<div class=adminForm><label>اسم المنتج<input id=pn></label><label>الفئة<input id=pc></label><label>الوصف<input id=pd></label><label>السعر<input id=pp type=number></label><label>الكمية بالمخزن (للإدارة فقط)<input id=ps type=number></label><label>صورة المنتج<input id=pi type=file accept="image/*" onchange="fileData(this,x=>window.pimg=x)"></label><button class=primary onclick="addProductAdmin()">إضافة المنتج</button></div><div class=adminList>${D.products.map(p=>`<div class=adminCard>${p.image?`<img class=thumb src="${p.image}">`:''}<div><b>${esc(p.name)}</b><p>${p.price} جنيه — المخزون: ${p.stock}</p><small>${esc(p.description)}</small></div><button onclick="toggleProduct(${p.id})">${p.active===false?'إظهار':'إخفاء'}</button></div>`).join('')}</div>`}function addProductAdmin(){if(!pn.value||!pp.value||ps.value==='')return toast('اكتب الاسم والسعر والكمية');D.products.push({id:Date.now(),name:pn.value,category:pc.value,description:pd.value,price:+pp.value,stock:+ps.value,image:window.pimg||'',active:true});window.pimg='';save();render()}function toggleProduct(id){let p=D.products.find(x=>x.id===id);p.active=p.active===false;save();render()}
 function videosAdmin(){return `<div class=adminForm><label>اسم الفيديو<input id=vn></label><label>الفيديو من المعرض<input type=file accept="video/*" onchange="fileData(this,x=>{window.vurl=x;window.vtype='video'})"></label><label>أو رابط فيديو<input id=vu></label><button class=primary onclick="addVideoAdmin()">إضافة الفيديو</button></div><div class=videoGrid>${D.videos.map(v=>`<div class=videoCard>${v.type==='video'?`<video class=video controls src="${v.url}"></video>`:`<a href="${v.url}" target="_blank">فتح الفيديو</a>`}<h3>${esc(v.title)}</h3></div>`).join('')}</div>`}function addVideoAdmin(){let url=window.vurl||vu.value;if(!vn.value||!url)return toast('اختار فيديو أو ضع رابطًا');D.videos.push({id:Date.now(),title:vn.value,url,type:window.vtype||'link'});window.vurl='';save();render()}
 function missingAdmin(){return `<div class=adminList>${D.missing.slice().reverse().map(m=>`<div class=adminCard><div><b>${esc(m.name)}</b><p>${esc(m.clientName)} — ${esc(m.business)}</p></div><select onchange="mstatus(${m.id},this.value)"><option ${m.status==='جديد'?'selected':''}>جديد</option><option ${m.status==='تم توفيره'?'selected':''}>تم توفيره</option><option ${m.status==='غير متوفر'?'selected':''}>غير متوفر</option></select></div>`).join('')}</div>`}function mstatus(id,v){D.missing.find(x=>x.id===id).status=v;save()}
-function settingsAdmin(){return `<form class=form><label>اسم الشركة<input id=sc value="${esc(D.settings.company)}"></label><label>الجملة<input id=ss value="${esc(D.settings.slogan)}"></label><label>واتساب والشكاوى<input id=sw value="${D.settings.whatsapp}"></label><label>إنستجرام/التحويل<input id=si value="${D.settings.instagram}"></label><label>خلفية الموقع من المعرض<input type=file accept="image/*" onchange="fileData(this,x=>window.bg=x)"></label><button type=button class=primary onclick="saveSettings()">حفظ الإعدادات</button></form>`}function saveSettings(){Object.assign(D.settings,{company:sc.value,slogan:ss.value,whatsapp:sw.value,instagram:si.value});if(window.bg)D.settings.background=window.bg;save();render()}
+function settingsAdmin(){return `<form class=form><label>اسم الشركة<input id=sc value="${esc(D.settings.company)}"></label><label>الجملة<input id=ss value="${esc(D.settings.slogan)}"></label><label>واتساب والشكاوى<input id=sw value="${D.settings.whatsapp}"></label><label>إنستجرام/التحويل<input id=si value="${D.settings.instagram}"></label><label>خلفية الموقع من المعرض<input type=file accept="image/*" onchange="fileData(this,x=>window.bg=x)"></label><button type=button class=primary onclick="saveSettings()">حفظ الإعدادات</button></form>`}async function saveSettings(){
+  Object.assign(D.settings,{
+    company:sc.value,
+    slogan:ss.value,
+    whatsapp:sw.value,
+    instagram:si.value
+  });
+
+  if(window.bg)D.settings.background=window.bg;
+
+  await saveRemoteSettings();
+}
 function managersAdmin(){let keys=[['clients','العملاء'],['orders','الطلبات'],['products','المنتجات'],['videos','الفيديوهات'],['missing','الأصناف الناقصة'],['settings','الإعدادات']];return `<div class=adminForm><label>اسم المدير<input id=mnm></label><label>رمز المدير<input id=mc></label><button class=primary onclick="addManager()">إضافة مدير</button></div><div class=adminList>${D.admins.map(m=>`<div class=adminCard><div><b>${esc(m.name)}</b><small>${m.owner?'المدير الرئيسي':'مدير تطبيق'}</small>${!m.owner?`<div class=permissions>${keys.map(([k,l])=>`<label><input type=checkbox ${m.permissions[k]?'checked':''} onchange="perm(${m.id},'${k}',this.checked)">${l}</label>`).join('')}</div>`:''}</div></div>`).join('')}</div>`}function addManager(){if(!mnm.value||!mc.value)return toast('اكتب اسم المدير والرمز');D.admins.push({id:Date.now(),name:mnm.value,code:mc.value,owner:false,permissions:{clients:false,orders:true,products:false,videos:false,missing:false,settings:false,admins:false}});save();render()}function perm(id,k,v){let m=D.admins.find(x=>x.id===id);m.permissions[k]=v;save()}
 function logout(){client=null;admin=null;cart=[];setPage('home')}
 function render(){let body=page==='home'?home():page==='register'?register():page==='login'?login():page==='shop'&&client?shop():page==='cart'&&client?cartPage():page==='orders'&&client?orders():page==='missing'&&client?missing():page==='videos'&&client?videos():page==='adminLogin'?adminLogin():page==='admin'&&admin?adminPage():home();document.getElementById('root').innerHTML=`<div class=app style="--bg:${D.settings.background?`url('${D.settings.background}')`: 'linear-gradient(135deg,#fff8ef,#ffe1c5)'}"><div class=wrap>${header()}${body}<div class=foot>كايرو كير — واتساب/شكاوى: ${esc(D.settings.whatsapp)} — التحويل: ${esc(D.settings.instagram)}</div></div></div>`}render();
