@@ -145,12 +145,13 @@ async function doLogin(){
 
   const c={
     id:data.id,
-    name:data.business_name||'',
+    name:data.name||data.business_name||'',
     phone:data.phone,
     activity:data.activity,
     business:data.business_name,
     address:data.address,
-    status:data.status
+    status:data.status,
+    maxQty:Number(data.max_qty)||12
   };
 
   if(c.status==='pending')return toast('حسابك تحت المراجعة من الإدارة');
@@ -186,14 +187,186 @@ async function loadRemoteProducts(){
 }
 
 loadRemoteProducts();
-function shop(){let welcome=`<div style="text-align:center;margin:15px 0;padding:16px;border-radius:16px;background:#fff3e6"><h2>👋 أهلاً بك يا ${esc(client.name||client.business||'عميلنا')}</h2><p>في شركة كايرو كير ❤️</p></div>`;let q=document.getElementById('sq')?.value||'';let arr=D.products.filter(p=>p.active!==false&&(`${p.name} ${p.category} ${p.description}`).toLowerCase().includes(q.toLowerCase()));return pageBox('العروض والمنتجات','ابحث عن الصنف. المخزون الحقيقي لا يظهر للعميل.',`${welcome}<div class=toolbar><input id=sq class=search value="${esc(q)}" oninput="render()" placeholder="🔎 ابحث هنا"><button class=secondary onclick="setPage('cart')">🛒 السلة (${cart.reduce((a,b)=>a+b.qty,0)})</button></div><div class=grid>${arr.map(p=>`<article class=product>${p.image?`<img class=productImg src="${p.image}">`:'<div class=productImg>🧴</div>'}<small>${esc(p.category)}</small><h3>${esc(p.name)}</h3><p>${esc(p.description)}</p><b>${p.price} جنيه</b><div class=qty><button onclick="changeQty(${p.id},-1)">−</button><b>${cart.find(x=>x.id===p.id)?.qty||1}</b><button onclick="changeQty(${p.id},1)">+</button></div><button class="primary wide" onclick="add(${p.id})">إضافة للطلب</button></article>`).join('')||'<p class=empty>مفيش نتائج مطابقة للبحث.</p>'}</div>`)}function add(id){let p=D.products.find(x=>x.id===id),x=cart.find(y=>y.id===id);if(x)x.qty++;else cart.push({id,qty:1});render()}function changeQty(id,n){let x=cart.find(y=>y.id===id);if(!x){if(n>0)cart.push({id,qty:1});}else{x.qty+=n;if(x.qty<=0)cart=cart.filter(y=>y.id!==id)}render()}
-function cartPage(){let items=cart.map(x=>({...x,p:D.products.find(p=>p.id===x.id)}));let total=items.reduce((s,x)=>s+x.p.price*x.qty,0);return pageBox('السلة','راجع طلبك قبل الإرسال.',`<div>${items.map(x=>`<div class=cartRow><b>${esc(x.p.name)}</b><div class=qty><button onclick="changeQty(${x.id},-1)">−</button><b>${x.qty}</b><button onclick="changeQty(${x.id},1)">+</button></div><strong>${x.p.price*x.qty} ج</strong></div>`).join('')||'<p>السلة فارغة.</p>'}</div><div class=paymentBox>💵 كاش: متاح<br>📸 إنستجرام/تحويل: ${D.settings.instagram}<br>📞 الشكاوى: ${D.settings.whatsapp}</div><div class=total>الإجمالي <b>${total} جنيه</b></div><button class="primary wide" onclick="sendOrder()">إرسال الطلب</button>`)}function sendOrder(){if(!cart.length)return toast('السلة فارغة');let items=cart.map(x=>({productId:x.id,qty:x.qty}));for(let x of items){let p=D.products.find(y=>y.id===x.productId);if(!p||Number(p.stock)<x.qty)return toast('الكمية المطلوبة غير متاحة حاليًا')}items.forEach(x=>D.products.find(p=>p.id===x.productId).stock-=x.qty);D.orders.push({id:'CC-'+Math.floor(100000+Math.random()*899999),clientId:client.id,items,total:items.reduce((s,x)=>s+D.products.find(p=>p.id===x.productId).price*x.qty,0),status:'جديد',createdAt:new Date().toISOString()});cart=[];save();toast('تم إرسال الطلب');setPage('orders')}
+function getClientMaxQty(){
+  const value=Number(client?.maxQty);
+  return value>0?value:12;
+}
+
+function shop(){
+let welcome=`<div style="text-align:center;margin:15px 0;padding:16px;border-radius:16px;background:#fff3e6"><h2>👋 أهلاً بك يا ${esc(client.name||client.business||'عميلنا')}</h2><p>في شركة كايرو كير ❤️</p></div>`;
+let q=document.getElementById('sq')?.value||'';
+let arr=D.products.filter(p=>p.active!==false&&(`${p.name} ${p.category} ${p.description}`).toLowerCase().includes(q.toLowerCase()));
+let maxQty=getClientMaxQty();
+
+return pageBox('العروض والمنتجات','اكتب الكمية المطلوبة ثم اضغط إضافة للطلب.',`
+${welcome}
+<div class=toolbar>
+<input id=sq class=search value="${esc(q)}" oninput="render()" placeholder="🔎 ابحث هنا">
+<button type="button" class=secondary onclick="setPage('cart')">🛒 السلة (${cart.reduce((a,b)=>a+Number(b.qty||0),0)})</button>
+</div>
+
+<div class=grid>
+${arr.map(p=>{
+let item=cart.find(x=>Number(x.id)===Number(p.id));
+let qty=item?Number(item.qty):0;
+
+return `<article class=product>
+${p.image?`<img class=productImg src="${p.image}">`:'<div class=productImg>🧴</div>'}
+<small>${esc(p.category)}</small>
+<h3>${esc(p.name)}</h3>
+<p>${esc(p.description)}</p>
+<b>${p.price} جنيه</b>
+
+<div style="margin:10px 0;padding:10px;border-radius:10px;background:#fff3e6;font-size:14px;line-height:1.7;font-weight:bold">
+ملحوظة: الحد الأقصى للعميل ${maxQty} قطعة من كل صنف، وفي حالة طلب كمية أكبر من ${maxQty} قطعة، برجاء الرجوع إلى الإدارة. ويمكن للإدارة فتح الكمية المطلوبة للعميل حسب الحاجة.
+</div>
+
+<label style="display:block;margin:10px 0;font-weight:bold">
+الكمية
+<input
+id="qty_${Number(p.id)}"
+type="number"
+min="1"
+max="${maxQty}"
+value="${qty||1}"
+style="width:100%;padding:12px;border:1px solid #ddd;border-radius:10px;font-size:18px;text-align:center;box-sizing:border-box"
+>
+</label>
+
+<button type="button" class="primary wide" onclick="addToCart(${Number(p.id)})">
+🛒 إضافة للطلب
+</button>
+</article>`;
+}).join('')||'<p class=empty>مفيش نتائج مطابقة للبحث.</p>'}
+</div>
+`)
+}
+
+function addToCart(id){
+id=Number(id);
+
+let p=D.products.find(x=>Number(x.id)===id);
+if(!p)return toast('المنتج غير موجود');
+
+let input=document.getElementById('qty_'+id);
+let qty=Number(input?.value||0);
+let maxQty=getClientMaxQty();
+
+if(!Number.isInteger(qty)||qty<1){
+return toast('من فضلك اكتب كمية صحيحة');
+}
+
+if(qty>maxQty){
+return toast('الحد الأقصى المسموح لك هو '+maxQty+' قطعة');
+}
+
+let item=cart.find(x=>Number(x.id)===id);
+
+if(item){
+item.qty=qty;
+}else{
+cart.push({id:id,qty:qty});
+}
+
+toast('تمت إضافة المنتج للسلة 🛒');
+render();
+}
+
+function changeQty(id,n){
+id=Number(id);
+n=Number(n);
+
+let item=cart.find(x=>Number(x.id)===id);
+if(!item)return;
+
+let maxQty=getClientMaxQty();
+let nextQty=Number(item.qty)+n;
+
+if(nextQty>maxQty){
+return toast('الحد الأقصى المسموح لك هو '+maxQty+' قطعة');
+}
+
+item.qty=nextQty;
+
+if(item.qty<=0){
+cart=cart.filter(x=>Number(x.id)!==id);
+}
+
+render();
+}
+
+function cartPage(){
+let items=cart.map(x=>({...x,p:D.products.find(p=>Number(p.id)===Number(x.id))}))
+.filter(x=>x.p);
+
+let total=items.reduce((s,x)=>s+Number(x.p.price||0)*Number(x.qty||0),0);
+
+return pageBox('السلة','راجع المنتجات والكميات قبل إرسال الطلب.',`
+<div>
+${items.map(x=>`
+<div class=cartRow>
+<div>
+<b>${esc(x.p.name)}</b>
+<br>
+<small>${x.p.price} جنيه للقطعة</small>
+</div>
+
+<div class=qty>
+<button type="button" onclick="changeQty(${Number(x.id)},-1)">−</button>
+<b>${Number(x.qty)}</b>
+<button type="button" onclick="changeQty(${Number(x.id)},1)">+</button>
+</div>
+
+<strong>${Number(x.p.price||0)*Number(x.qty||0)} ج</strong>
+</div>
+`).join('')||'<p>السلة فارغة.</p>'}
+</div>
+
+<div class=paymentBox>
+💵 كاش: متاح<br>
+📸 إنستجرام/تحويل: ${D.settings.instagram}<br>
+📞 الشكاوى: ${D.settings.whatsapp}
+</div>
+
+<div class=total>
+الإجمالي <b>${total} جنيه</b>
+</div>
+
+<button type="button" class="primary wide" onclick="sendOrder()">إرسال الطلب</button>
+`)
+}
+
 function orders(){let os=D.orders.filter(o=>o.clientId===client.id).reverse();return pageBox('طلباتي','جديد ← قيد التجهيز ← خرج للتوصيل ← تم التسليم',os.map(o=>`<div class=order><b>${o.id}</b> <span class=status>${o.status}</span><p>${o.items.map(i=>{let p=D.products.find(p=>p.id===i.productId);return esc(p?.name||'صنف')+' × '+i.qty}).join('، ')}</p><strong>${o.total} جنيه</strong></div>`).join('')||'<p>لسه مفيش طلبات.</p>')}
 function missing(){return pageBox('اطلب الصنف الناقص','اكتب أي صنف مش موجود.',`<form class=form onsubmit="miss(event)"><label>اسم الصنف<input id=mn required placeholder="مثال: شامبو كلير"></label><button class="primary wide">إرسال</button></form><div class=adminList>${D.missing.filter(x=>x.clientId===client.id).reverse().map(x=>`<div class=adminCard><b>${esc(x.name)}</b><span class=status>${x.status}</span></div>`).join('')}</div>`)}function miss(e){e.preventDefault();D.missing.push({id:Date.now(),clientId:client.id,clientName:client.name,business:client.business,name:mn.value,status:'جديد'});save();toast('تم إرسال طلب الصنف الناقص');render()}
 function videos(){return pageBox('فيديوهات كايرو كير','الفيديوهات التي أضافتها الإدارة.',`<div class=videoGrid>${D.videos.map(v=>`<div class=videoCard>${v.type==='video'?`<video class=video controls src="${v.url}"></video>`:`<a href="${v.url}" target="_blank">فتح الفيديو</a>`}<h3>${esc(v.title)}</h3></div>`).join('')||'<p>لا توجد فيديوهات.</p>'}</div>`)}
 function adminLogin(){return pageBox('دخول الإدارة','عاصم والمديرون المضافون.',`<form class=form><label>اسم المدير<input id=an></label><label>الرمز<input id=ac type=password></label><button type=button class=primary onclick="doAdmin()">دخول الإدارة</button></form>`)}function doAdmin(){let a=D.admins.find(x=>x.name===an.value&&x.code===ac.value);if(!a)return toast('اسم المدير أو الرمز غير صحيح');admin=a;setPage('admin')}
 let atab='clients';function can(k){return admin?.owner||admin?.permissions?.[k]}function adminPage(){if(!can(atab))atab=['clients','orders','products','videos','missing','settings','admins'].find(can)||'clients';let tabs=[['clients','العملاء'],['orders','الطلبات'],['products','المنتجات'],['videos','الفيديوهات'],['missing','الأصناف الناقصة'],['settings','الإعدادات'],['admins','المديرين']].filter(x=>can(x[0]));return pageBox('لوحة الإدارة — '+esc(admin.name),admin.owner?'عاصم لديه كل الصلاحيات':'صلاحياتك محددة من عاصم',`<div class=adminTabs>${tabs.map(x=>`<button class="chip ${atab===x[0]?'active':''}" onclick="atab='${x[0]}';render()">${x[1]}</button>`).join('')}</div>${adminTabBody()}`)}function adminTabBody(){if(atab==='clients')return clientsAdmin();if(atab==='orders')return ordersAdmin();if(atab==='products')return productsAdmin();if(atab==='videos')return videosAdmin();if(atab==='missing')return missingAdmin();if(atab==='settings')return settingsAdmin();return managersAdmin()}
-function clientsAdmin(){let q=document.getElementById('cq')?.value||'';let cs=D.clients.filter(c=>(c.name+' '+c.phone+' '+c.business).includes(q));return `<button class="primary wide" onclick="loadRemoteClients()">🔄 تحديث العملاء من قاعدة البيانات</button><input id=cq class=search value="${esc(q)}" oninput="render()" placeholder="🔎 ابحث عن العميل"><div class=adminList>${cs.map(c=>{let os=D.orders.filter(o=>o.clientId===c.id);return `<div class=adminCard><div><b>${esc(c.name)}</b><p>${esc(c.business)} — ${c.activity}</p><small>${c.phone} — ${esc(c.address)}</small><p>عدد الطلبات: ${os.length} | إجمالي المسحوب: ${os.reduce((s,o)=>s+o.total,0)} جنيه</p></div><div><span class=status>${c.status}</span>${admin.owner&&c.status==='pending'?`<div style="margin-top:12px;display:flex;gap:8px"><button class="primary" onclick="approve('${c.id}')">✅ قبول</button><button class="danger" onclick="reject('${c.id}')">❌ رفض</button></div>`:''}</div></div>`}).join('')}</div>`}async function loadRemoteClients(){
+function clientsAdmin(){let q=document.getElementById('cq')?.value||'';let cs=D.clients.filter(c=>(c.name+' '+c.phone+' '+c.business).includes(q));return `<button class="primary wide" onclick="loadRemoteClients()">🔄 تحديث العملاء من قاعدة البيانات</button><input id=cq class=search value="${esc(q)}" oninput="render()" placeholder="🔎 ابحث عن العميل"><div class=adminList>${cs.map(c=>{let os=D.orders.filter(o=>o.clientId===c.id);let max=Number(c.maxQty)||12;return `<div class=adminCard><div><b>${esc(c.name)}</b><p>${esc(c.business)} — ${c.activity}</p><small>${c.phone} — ${esc(c.address)}</small><p>عدد الطلبات: ${os.length} | إجمالي المسحوب: ${os.reduce((s,o)=>s+o.total,0)} جنيه</p>${admin.owner?`<div style="margin-top:12px;padding:12px;background:#fff3e6;border-radius:12px"><label style="display:block;font-weight:bold">الحد الأقصى للكمية لكل صنف<input id="maxqty_${c.id}" type="number" min="1" value="${max}" style="width:100%;padding:10px;margin-top:6px;box-sizing:border-box"></label><button class="primary" style="margin-top:8px" onclick="saveClientMaxQty('${c.id}')">💾 حفظ الكمية</button></div>`:''}</div><div><span class=status>${c.status}</span>${admin.owner&&c.status==='pending'?`<div style="margin-top:12px;display:flex;gap:8px"><button class="primary" onclick="approve('${c.id}')">✅ قبول</button><button class="danger" onclick="reject('${c.id}')">❌ رفض</button></div>`:''}</div></div>`}).join('')}</div>`}async function saveClientMaxQty(id){
+  const input=document.getElementById('maxqty_'+id);
+  const maxQty=Number(input?.value||0);
+
+  if(!Number.isInteger(maxQty)||maxQty<1){
+    return toast('اكتب كمية صحيحة');
+  }
+
+  const {error}=await supabaseClient
+    .from('clients')
+    .update({max_qty:maxQty})
+    .eq('id',id);
+
+  if(error){
+    return toast('تعذر حفظ الكمية: '+error.message);
+  }
+
+  const c=D.clients.find(x=>x.id===id);
+  if(c)c.maxQty=maxQty;
+
+  save();
+  toast('تم حفظ حد الكمية للعميل ✅');
+  render();
+}
+
+async function loadRemoteClients(){
   const {data,error}=await supabaseClient
     .from('clients')
     .select('*')
