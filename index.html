@@ -159,6 +159,33 @@ async function doLogin(){
   client=c;
   setPage('shop');
 }
+async function loadRemoteProducts(){
+  const {data,error}=await supabaseClient
+    .from('products')
+    .select('*')
+    .order('created_at',{ascending:false});
+
+  if(error){
+    console.log('Products error:',error.message);
+    return;
+  }
+
+  D.products=(data||[]).map(p=>({
+    id:p.id,
+    name:p.name||'',
+    category:p.category||'',
+    description:p.description||'',
+    price:+p.price||0,
+    stock:+p.stock||0,
+    image:p.image_url||'',
+    active:p.active!==false
+  }));
+
+  save();
+  render();
+}
+
+loadRemoteProducts();
 function shop(){let welcome=`<div style="text-align:center;margin:15px 0;padding:16px;border-radius:16px;background:#fff3e6"><h2>👋 أهلاً بك يا ${esc(client.name||client.business||'عميلنا')}</h2><p>في شركة كايرو كير ❤️</p></div>`;let q=document.getElementById('sq')?.value||'';let arr=D.products.filter(p=>p.active!==false&&(`${p.name} ${p.category} ${p.description}`).toLowerCase().includes(q.toLowerCase()));return pageBox('العروض والمنتجات','ابحث عن الصنف. المخزون الحقيقي لا يظهر للعميل.',`${welcome}<div class=toolbar><input id=sq class=search value="${esc(q)}" oninput="render()" placeholder="🔎 ابحث هنا"><button class=secondary onclick="setPage('cart')">🛒 السلة (${cart.reduce((a,b)=>a+b.qty,0)})</button></div><div class=grid>${arr.map(p=>`<article class=product>${p.image?`<img class=productImg src="${p.image}">`:'<div class=productImg>🧴</div>'}<small>${esc(p.category)}</small><h3>${esc(p.name)}</h3><p>${esc(p.description)}</p><b>${p.price} جنيه</b><div class=qty><button onclick="changeQty(${p.id},-1)">−</button><b>${cart.find(x=>x.id===p.id)?.qty||1}</b><button onclick="changeQty(${p.id},1)">+</button></div><button class="primary wide" onclick="add(${p.id})">إضافة للطلب</button></article>`).join('')||'<p class=empty>مفيش نتائج مطابقة للبحث.</p>'}</div>`)}function add(id){let p=D.products.find(x=>x.id===id),x=cart.find(y=>y.id===id);if(x)x.qty++;else cart.push({id,qty:1});render()}function changeQty(id,n){let x=cart.find(y=>y.id===id);if(!x){if(n>0)cart.push({id,qty:1});}else{x.qty+=n;if(x.qty<=0)cart=cart.filter(y=>y.id!==id)}render()}
 function cartPage(){let items=cart.map(x=>({...x,p:D.products.find(p=>p.id===x.id)}));let total=items.reduce((s,x)=>s+x.p.price*x.qty,0);return pageBox('السلة','راجع طلبك قبل الإرسال.',`<div>${items.map(x=>`<div class=cartRow><b>${esc(x.p.name)}</b><div class=qty><button onclick="changeQty(${x.id},-1)">−</button><b>${x.qty}</b><button onclick="changeQty(${x.id},1)">+</button></div><strong>${x.p.price*x.qty} ج</strong></div>`).join('')||'<p>السلة فارغة.</p>'}</div><div class=paymentBox>💵 كاش: متاح<br>📸 إنستجرام/تحويل: ${D.settings.instagram}<br>📞 الشكاوى: ${D.settings.whatsapp}</div><div class=total>الإجمالي <b>${total} جنيه</b></div><button class="primary wide" onclick="sendOrder()">إرسال الطلب</button>`)}function sendOrder(){if(!cart.length)return toast('السلة فارغة');let items=cart.map(x=>({productId:x.id,qty:x.qty}));for(let x of items){let p=D.products.find(y=>y.id===x.productId);if(!p||Number(p.stock)<x.qty)return toast('الكمية المطلوبة غير متاحة حاليًا')}items.forEach(x=>D.products.find(p=>p.id===x.productId).stock-=x.qty);D.orders.push({id:'CC-'+Math.floor(100000+Math.random()*899999),clientId:client.id,items,total:items.reduce((s,x)=>s+D.products.find(p=>p.id===x.productId).price*x.qty,0),status:'جديد',createdAt:new Date().toISOString()});cart=[];save();toast('تم إرسال الطلب');setPage('orders')}
 function orders(){let os=D.orders.filter(o=>o.clientId===client.id).reverse();return pageBox('طلباتي','جديد ← قيد التجهيز ← خرج للتوصيل ← تم التسليم',os.map(o=>`<div class=order><b>${o.id}</b> <span class=status>${o.status}</span><p>${o.items.map(i=>{let p=D.products.find(p=>p.id===i.productId);return esc(p?.name||'صنف')+' × '+i.qty}).join('، ')}</p><strong>${o.total} جنيه</strong></div>`).join('')||'<p>لسه مفيش طلبات.</p>')}
@@ -225,7 +252,69 @@ async function reject(id){
   render();
 }
 function ordersAdmin(){return `<div class=adminList>${D.orders.slice().reverse().map(o=>`<div class=adminCard><div><b>${o.id}</b><p>${D.clients.find(c=>c.id===o.clientId)?.name||'عميل'} — ${o.total} جنيه</p></div><select onchange="statusOrder(${o.id?o.id:0},this.value)" data-id="${o.id}"><option ${o.status==='جديد'?'selected':''}>جديد</option><option ${o.status==='قيد التجهيز'?'selected':''}>قيد التجهيز</option><option ${o.status==='خرج للتوصيل'?'selected':''}>خرج للتوصيل</option><option ${o.status==='تم التسليم'?'selected':''}>تم التسليم</option><option ${o.status==='ملغي'?'selected':''}>ملغي</option></select></div>`).join('')}</div>`}function statusOrder(_,v){let el=event.target,o=D.orders.find(x=>x.id===el.dataset.id);if(o){o.status=v;save()}}
-function productsAdmin(){return `<div class=adminForm><label>اسم المنتج<input id=pn></label><label>الفئة<input id=pc></label><label>الوصف<input id=pd></label><label>السعر<input id=pp type=number></label><label>الكمية بالمخزن (للإدارة فقط)<input id=ps type=number></label><label>صورة المنتج<input id=pi type=file accept="image/*" onchange="fileData(this,x=>window.pimg=x)"></label><button class=primary onclick="addProductAdmin()">إضافة المنتج</button></div><div class=adminList>${D.products.map(p=>`<div class=adminCard>${p.image?`<img class=thumb src="${p.image}">`:''}<div><b>${esc(p.name)}</b><p>${p.price} جنيه — المخزون: ${p.stock}</p><small>${esc(p.description)}</small></div><button onclick="toggleProduct(${p.id})">${p.active===false?'إظهار':'إخفاء'}</button></div>`).join('')}</div>`}function addProductAdmin(){if(!pn.value||!pp.value||ps.value==='')return toast('اكتب الاسم والسعر والكمية');D.products.push({id:Date.now(),name:pn.value,category:pc.value,description:pd.value,price:+pp.value,stock:+ps.value,image:window.pimg||'',active:true});window.pimg='';save();render()}function toggleProduct(id){let p=D.products.find(x=>x.id===id);p.active=p.active===false;save();render()}
+function productsAdmin(){return `<div class=adminForm><label>اسم المنتج<input id=pn></label><label>الفئة<input id=pc></label><label>الوصف<input id=pd></label><label>السعر<input id=pp type=number></label><label>الكمية بالمخزن (للإدارة فقط)<input id=ps type=number></label><label>صورة المنتج<input id=pi type=file accept="image/*" onchange="fileData(this,x=>window.pimg=x)"></label><button class=primary onclick="addProductAdmin()">إضافة المنتج</button></div><div class=adminList>${D.products.map(p=>`<div class=adminCard>${p.image?`<img class=thumb src="${p.image}">`:''}<div><b>${esc(p.name)}</b><p>${p.price} جنيه — المخزون: ${p.stock}</p><small>${esc(p.description)}</small></div><button onclick="toggleProduct(${p.id})">${p.active===false?'إظهار':'إخفاء'}</button></div>`).join('')}</div>`}async function addProductAdmin(){
+  if(!pn.value||!pp.value||ps.value==='')return toast('اكتب الاسم والسعر والكمية');
+
+  let imageUrl='';
+
+  const fileInput=document.getElementById('pi');
+  const file=fileInput?.files?.[0];
+
+  if(file){
+    const ext=file.name.split('.').pop().toLowerCase()||'jpg';
+    const fileName='product-'+Date.now()+'.'+ext;
+
+    const {error:uploadError}=await supabaseClient
+      .storage
+      .from('site-assets')
+      .upload(fileName,file,{upsert:true,contentType:file.type});
+
+    if(uploadError){
+      return toast('فشل رفع صورة المنتج: '+uploadError.message);
+    }
+
+    const {data:urlData}=supabaseClient
+      .storage
+      .from('site-assets')
+      .getPublicUrl(fileName);
+
+    imageUrl=urlData.publicUrl;
+  }
+
+  const {data:product,error:productError}=await supabaseClient
+    .from('products')
+    .insert([{
+      name:pn.value,
+      category:pc.value,
+      description:pd.value,
+      price:+pp.value,
+      stock:+ps.value,
+      image_url:imageUrl,
+      active:true
+    }])
+    .select()
+    .single();
+
+  if(productError){
+    return toast('فشل حفظ المنتج في قاعدة البيانات: '+productError.message);
+  }
+
+  D.products.push({
+    id:product.id,
+    name:product.name,
+    category:product.category,
+    description:product.description,
+    price:+product.price,
+    stock:+product.stock,
+    image:product.image_url||'',
+    active:product.active!==false
+  });
+
+  window.pimg='';
+  save();
+  render();
+  toast('تم إضافة المنتج والصورة بنجاح ✅');
+}function toggleProduct(id){let p=D.products.find(x=>x.id===id);p.active=p.active===false;save();render()}
 function videosAdmin(){return `<div class=adminForm><label>اسم الفيديو<input id=vn></label><label>الفيديو من المعرض<input type=file accept="video/*" onchange="fileData(this,x=>{window.vurl=x;window.vtype='video'})"></label><label>أو رابط فيديو<input id=vu></label><button class=primary onclick="addVideoAdmin()">إضافة الفيديو</button></div><div class=videoGrid>${D.videos.map(v=>`<div class=videoCard>${v.type==='video'?`<video class=video controls src="${v.url}"></video>`:`<a href="${v.url}" target="_blank">فتح الفيديو</a>`}<h3>${esc(v.title)}</h3></div>`).join('')}</div>`}function addVideoAdmin(){let url=window.vurl||vu.value;if(!vn.value||!url)return toast('اختار فيديو أو ضع رابطًا');D.videos.push({id:Date.now(),title:vn.value,url,type:window.vtype||'link'});window.vurl='';save();render()}
 function missingAdmin(){return `<div class=adminList>${D.missing.slice().reverse().map(m=>`<div class=adminCard><div><b>${esc(m.name)}</b><p>${esc(m.clientName)} — ${esc(m.business)}</p></div><select onchange="mstatus(${m.id},this.value)"><option ${m.status==='جديد'?'selected':''}>جديد</option><option ${m.status==='تم توفيره'?'selected':''}>تم توفيره</option><option ${m.status==='غير متوفر'?'selected':''}>غير متوفر</option></select></div>`).join('')}</div>`}function mstatus(id,v){D.missing.find(x=>x.id===id).status=v;save()}
 function settingsAdmin(){return `<form class=form><label>اسم الشركة<input id=sc value="${esc(D.settings.company)}"></label><label>الجملة<input id=ss value="${esc(D.settings.slogan)}"></label><label>واتساب والشكاوى<input id=sw value="${D.settings.whatsapp}"></label><label>إنستجرام/التحويل<input id=si value="${D.settings.instagram}"></label><label>خلفية الموقع من المعرض<input type=file accept="image/*" onchange="fileData(this,x=>window.bg=x)"></label><button type=button class=primary onclick="saveSettings()">حفظ الإعدادات</button></form>`}async function saveSettings(){
