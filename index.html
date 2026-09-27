@@ -366,7 +366,72 @@ ${items.map(x=>`
 <button type="button" class="primary wide" onclick="sendOrder()">إرسال الطلب</button>
 `)
 }
+async function sendOrder(){
+  if(!client) return toast('يجب تسجيل الدخول أولاً');
+  if(!cart.length) return toast('السلة فارغة 🛒');
 
+  const items=cart.map(x=>{
+    const p=D.products.find(p=>String(p.id)===String(x.id));
+    if(!p) return null;
+
+    const qty=Number(x.qty)||1;
+    const price=Number(p.price)||0;
+
+    return {
+      product_id:String(p.id),
+      product_name:p.name||'',
+      qty:qty,
+      price:price,
+      total:price*qty
+    };
+  }).filter(Boolean);
+
+  if(!items.length) return toast('لا توجد منتجات صالحة في السلة');
+
+  const total=items.reduce((sum,item)=>sum+item.total,0);
+
+  const {data:order,error:orderError}=await supabaseClient
+    .from('orders')
+    .insert({
+      client_id:client.id,
+      total:total,
+      status:'جديد'
+    })
+    .select()
+    .single();
+
+  if(orderError){
+    return toast('تعذر حفظ الطلب: '+orderError.message);
+  }
+
+  const rows=items.map(item=>({
+    order_id:order.id,
+    product_id:item.product_id,
+    product_name:item.product_name,
+    qty:item.qty,
+    price:item.price,
+    total:item.total
+  }));
+
+  const {error:itemsError}=await supabaseClient
+    .from('order_items')
+    .insert(rows);
+
+  if(itemsError){
+    await supabaseClient
+      .from('orders')
+      .delete()
+      .eq('id',order.id);
+
+    return toast('تعذر حفظ منتجات الطلب: '+itemsError.message);
+  }
+
+  cart=[];
+  save();
+  render();
+
+  toast('تم إرسال الطلب بنجاح ✅');
+}
 function orders(){let os=D.orders.filter(o=>o.clientId===client.id).reverse();return pageBox('طلباتي','جديد ← قيد التجهيز ← خرج للتوصيل ← تم التسليم',os.map(o=>`<div class=order><b>${o.id}</b> <span class=status>${o.status}</span><p>${o.items.map(i=>{let p=D.products.find(p=>p.id===i.productId);return esc(p?.name||'صنف')+' × '+i.qty}).join('، ')}</p><strong>${o.total} جنيه</strong></div>`).join('')||'<p>لسه مفيش طلبات.</p>')}
 function missing(){return pageBox('اطلب الصنف الناقص','اكتب أي صنف مش موجود.',`<form class=form onsubmit="miss(event)"><label>اسم الصنف<input id=mn required placeholder="مثال: شامبو كلير"></label><button class="primary wide">إرسال</button></form><div class=adminList>${D.missing.filter(x=>x.clientId===client.id).reverse().map(x=>`<div class=adminCard><b>${esc(x.name)}</b><span class=status>${x.status}</span></div>`).join('')}</div>`)}function miss(e){e.preventDefault();D.missing.push({id:Date.now(),clientId:client.id,clientName:client.name,business:client.business,name:mn.value,status:'جديد'});save();toast('تم إرسال طلب الصنف الناقص');render()}
 function videos(){return pageBox('فيديوهات كايرو كير','الفيديوهات التي أضافتها الإدارة.',`<div class=videoGrid>${D.videos.map(v=>`<div class=videoCard>${v.type==='video'?`<video class=video controls src="${v.url}"></video>`:`<a href="${v.url}" target="_blank">فتح الفيديو</a>`}<h3>${esc(v.title)}</h3></div>`).join('')||'<p>لا توجد فيديوهات.</p>'}</div>`)}
