@@ -233,7 +233,7 @@ style="width:100%;padding:12px;border:1px solid #ddd;border-radius:10px;font-siz
 >
 </label>
 
-<button type="button" class="primary wide" onclick="addToCart(${Number(p.id)})">
+<button type="button" class="primary wide" onclick="addToCartByName('${esc(p.name)}')">
 🛒 إضافة للطلب
 </button>
 </article>`;
@@ -242,38 +242,69 @@ style="width:100%;padding:12px;border:1px solid #ddd;border-radius:10px;font-siz
 `)
 }
 
-function addToCart(id){
+function addToCartByName(name){
+  const p=D.products.find(x=>String(x.name)===String(name));
+  if(!p)return toast("عدد المنتجات المحملة: "+D.products.length);
+  addToCart(p.id);
+async function addToCart(id){
+  id=String(id);
+
+  let p=D.products.find(x=>String(x.id)===id);
+
+  if(!p){
+    const {data,error}=await supabaseClient
+      .from('products')
+      .select('*')
+      .eq('id',id)
+      .maybeSingle();
+
+    if(error){
+      return toast('خطأ Supabase: '+error.message);
+    }
+
+    if(!data){
+      return toast('المنتج غير موجود');
+    }
+
+    p={
+      id:String(data.id),
+      name:data.name||'',
+      category:data.category||'',
+      description:data.description||'',
+      price:Number(data.price)||0,
+      stock:Number(data.stock)||0,
+      image:data.image_url||'',
+      active:data.active!==false
+    };
+
+    D.products.push(p);
+  }
+
+  let input=document.getElementById('qty_'+id);
+  let qty=Number(input?.value||1);
+  let maxQty=getClientMaxQty();
+
+  if(!Number.isInteger(qty)||qty<1){
+    return toast('من فضلك اكتب كمية صحيحة');
+  }
+
+  if(qty>maxQty){
+    return toast('الحد الأقصى المسموح لك هو '+maxQty);
+  }
+
+  let item=cart.find(x=>String(x.id)===id);
+
+  if(item){
+    item.qty=qty;
+  }else{
+    cart.push({id:id,qty:qty});
+  }
+
+  toast('تمت إضافة المنتج للسلة 🛒');
+  render();
+}
 id=Number(id);
-
-let p=D.products.find(x=>Number(x.id)===id);
-if(!p)return toast('المنتج غير موجود');
-
-let input=document.getElementById('qty_'+id);
-let qty=Number(input?.value||0);
-let maxQty=getClientMaxQty();
-
-if(!Number.isInteger(qty)||qty<1){
-return toast('من فضلك اكتب كمية صحيحة');
-}
-
-if(qty>maxQty){
-return toast('الحد الأقصى المسموح لك هو '+maxQty+' قطعة');
-}
-
-let item=cart.find(x=>Number(x.id)===id);
-
-if(item){
-item.qty=qty;
-}else{
-cart.push({id:id,qty:qty});
-}
-
-toast('تمت إضافة المنتج للسلة 🛒');
-render();
-}
-
-function changeQty(id,n){
-id=Number(id);
+if(!Number.isInteger(id)||id<1)return toast("المنتج غير موجود");
 n=Number(n);
 
 let item=cart.find(x=>Number(x.id)===id);
