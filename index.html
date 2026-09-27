@@ -327,7 +327,7 @@ render();
 }
 
 function cartPage(){
-let items=cart.map(x=>({...x,p:D.products.find(p=>Number(p.id)===Number(x.id))}))
+let items=cart.map(x=>({...x,p:D.products.find(p=>String(p.id)===String(x.id))}))
 .filter(x=>x.p);
 
 let total=items.reduce((s,x)=>s+Number(x.p.price||0)*Number(x.qty||0),0);
