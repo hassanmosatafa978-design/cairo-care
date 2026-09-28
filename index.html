@@ -1,4 +1,4 @@
-	<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#e86b19"><title>كايرو كير</title><style>
+<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#e86b19"><title>كايرو كير</title><style>
 :root{--orange:#e86b19;--dark:#241b17;--cream:#fff8ef;--blue:#62b7e8}*{box-sizing:border-box}body{margin:0;font-family:Arial,Tahoma,sans-serif;background:var(--cream);color:var(--dark)}button,input,select,textarea{font:inherit}button{cursor:pointer;border:0;border-radius:12px;padding:11px 16px}.app{min-height:100vh;background:linear-gradient(#0004,#0004),var(--bg,linear-gradient(135deg,#fff8ef,#ffe1c5)) center/cover fixed}.wrap{max-width:1050px;margin:auto;padding:18px}.top{background:#fff;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;border-radius:18px;position:sticky;top:8px;z-index:4;box-shadow:0 5px 20px #0002}.brand{background:none;padding:0;display:flex;align-items:center;gap:10px}.logo{width:45px;height:45px;border-radius:14px;background:var(--orange);color:#fff;display:grid;place-items:center;font-weight:bold}.brand b{display:block;font-size:20px}.brand small{display:block;color:#777}.nav{display:flex;gap:6px;flex-wrap:wrap}.nav button{background:#f4eee8}.page,.hero{background:#fffffff2;border-radius:25px;margin-top:18px;padding:25px;box-shadow:0 10px 35px #0002}.hero{min-height:70vh;display:grid;grid-template-columns:1.4fr .8fr;gap:25px;align-items:center}.hero h1{font-size:52px;margin:10px 0;color:var(--orange)}h2{margin:8px 0}.heroCard{background:linear-gradient(145deg,#e86b19,#62b7e8);color:#fff;padding:35px;border-radius:25px;text-align:center}.circle{width:110px;height:110px;border-radius:50%;background:#fff;color:var(--orange);display:grid;place-items:center;margin:auto;font-size:35px;font-weight:bold}.actions{display:flex;gap:10px;margin:20px 0;flex-wrap:wrap}.primary{background:var(--orange);color:#fff}.secondary{background:var(--blue);color:#fff}.danger{background:#c62828;color:#fff}.outline{background:#fff;border:1px solid #ddd}.wide{width:100%}.form{max-width:650px;margin:auto;display:grid;gap:13px}.form label,.adminForm label{display:grid;gap:6px;font-weight:bold}.form input,.form select,.adminForm input,.adminForm select,.search{width:100%;padding:12px;border:1px solid #ddd;border-radius:12px;background:#fff}.toolbar{display:flex;gap:10px;margin-bottom:14px}.search{flex:1}.chips{flex-wrap:wrap}.chip{background:#eee}.chip.active{background:var(--orange);color:#fff}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:15px}.product,.adminCard,.order,.cartRow,.videoCard{background:#fff;border:1px solid #eee;border-radius:17px;padding:15px}.productImg{width:100%;height:170px;object-fit:cover;border-radius:13px;background:#f5eee8;display:grid;place-items:center}.qty{display:flex;align-items:center;justify-content:center;gap:18px;margin:12px 0}.qty button{width:40px;height:40px;background:#eee;font-size:22px}.adminTabs{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:15px}.adminList{display:grid;gap:10px;margin-top:15px}.adminCard{display:flex;justify-content:space-between;gap:12px;align-items:center}.rowBtns{display:flex;gap:7px;align-items:center;flex-wrap:wrap}.status{background:#fff0dc;border-radius:999px;padding:7px 10px;display:inline-block}.adminForm{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;background:#fff;border-radius:17px;padding:15px;margin-bottom:15px}.thumb{width:80px;height:80px;object-fit:cover;border-radius:10px}.permissions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.permissions label{font-size:13px}.videoGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:15px}.video{width:100%;max-height:280px;border-radius:12px}.paymentBox{padding:15px;background:#fff5e8;border-radius:14px;margin:15px 0;line-height:2}.total{display:flex;justify-content:space-between;font-size:20px;margin:15px 0}.toast{position:fixed;bottom:25px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:13px 20px;border-radius:999px;z-index:20}.foot{text-align:center;padding:20px;color:#555}.empty{text-align:center;padding:30px}.hidden{display:none!important}@media(max-width:750px){.hero{grid-template-columns:1fr}.hero h1{font-size:38px}.top{position:relative}.nav{justify-content:center}}
 </style><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script></head><body><div id="root"></div><script>
 const KEY='cairo-care-html-v1';const seed={settings:{company:'كايرو كير',slogan:'كايرو كير معاك في كل خطوة',whatsapp:'01000177509',instagram:'01000177509',background:''},clients:[],products:[],orders:[],videos:[],missing:[],admins:[{id:1,name:'عاصم',code:'708090',owner:true,permissions:{clients:true,orders:true,products:true,videos:true,missing:true,settings:true,admins:true}}]};let D=load(),page='home',client=null,admin=null,cart=[];
@@ -70,10 +70,10 @@ async function saveRemoteSettings(){
   render();
 }
 
-loadRemoteSettings();
 const SUPABASE_URL="https://wmeoudzbtnalthfcumuk.supabase.co"
 const SUPABASE_KEY="sb_publishable_x7lky4gso40A7_WF83PEcA_-ptqxSYJ"
 const supabaseClient=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+loadRemoteSettings();
 
 async function testSupabase(){
   const {data,error}=await supabaseClient.from('clients').select('id').limit(1);
@@ -84,7 +84,22 @@ async function testSupabase(){
   }
 }
 
-function load(){try{return Object.assign(structuredClone(seed),JSON.parse(localStorage.getItem(KEY)||'{}'))}catch{return structuredClone(seed)}}function save(){localStorage.setItem(KEY,JSON.stringify(D))}function toast(x){alert(x)}function setPage(p){page=p;render()}function back(){setPage('home')}function esc(x=''){return String(x).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}function fileData(input,cb){let f=input.files[0];if(!f)return;let r=new FileReader();r.onload=()=>cb(r.result);r.readAsDataURL(f)}
+function load(){try{return Object.assign(structuredClone(seed),JSON.parse(localStorage.getItem(KEY)||'{}'))}catch{return structuredClone(seed)}}function save(){localStorage.setItem(KEY,JSON.stringify(D))}function toast(x){alert(x)}let pageHistory=[];
+function setPage(p){
+  if(p===page)return;
+  pageHistory.push(page);
+  page=p;
+  render();
+}
+function back(){
+  if(pageHistory.length){
+    page=pageHistory.pop();
+    render();
+  }else{
+    page=client?'shop':admin?'admin':'home';
+    render();
+  }
+}function esc(x=''){return String(x).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}function fileData(input,cb){let f=input.files[0];if(!f)return;let r=new FileReader();r.onload=()=>cb(r.result);r.readAsDataURL(f)}
 function header(){return `<div class=top><button class=brand onclick="setPage('home')"><span class=logo>CC</span><span><b>${esc(D.settings.company)}</b><small>${esc(D.settings.slogan)}</small></span></button><div class=nav>${page!='home'?'<button onclick="back()">↩ رجوع</button>':''}${client?`<button onclick="setPage('shop')">العروض</button><button onclick="setPage('orders')">طلباتي</button><button onclick="setPage('missing')">الصنف الناقص</button><button onclick="setPage('videos')">الفيديوهات</button>`:''}${admin?'<button onclick="setPage(\'admin\')">لوحة الإدارة</button>':''}${!client&&!admin?'<button onclick="setPage(\'adminLogin\')">دخول الإدارة</button>':''}</div>${client||admin?'<button class=outline onclick="logout()">خروج</button>':''}</div>`}function pageBox(title,sub,body){return `<main class=page><h1>${title}</h1><p>${sub||''}</p>${body}</main>`}
 function home(){return `<main class=hero><section><b>توزيع مستحضرات التجميل</b><h1>${esc(D.settings.company)}</h1><h2>${esc(D.settings.slogan)}</h2><p>سجّل حسابك، وبعد موافقة الإدارة تصفّح العروض واطلب براحتك وتابع طلبك حتى التسليم.</p><div class=actions><button class=primary onclick="setPage('login')">دخول</button><button class=secondary onclick="setPage('register')">إنشاء حساب</button></div><p>📞 الشكاوى: ${esc(D.settings.whatsapp)} • 📸 التحويل: ${esc(D.settings.instagram)}</p></section><section class=heroCard><div class=circle>CC</div><h2>أهلاً بك في كايرو كير</h2><p>صيدليات • سناتر • كوافيرات</p><small>الحسابات الجديدة تظل تحت المراجعة حتى موافقة الإدارة.</small></section></main>`}
 function toggleBusinessField(){
@@ -224,7 +239,7 @@ ${p.image?`<img class=productImg src="${p.image}">`:'<div class=productImg>🧴<
 <label style="display:block;margin:10px 0;font-weight:bold">
 الكمية
 <input
-id="qty_${Number(p.id)}"
+id="qty_${String(p.id)}"
 type="number"
 min="1"
 max="${maxQty}"
@@ -246,6 +261,7 @@ function addToCartByName(name){
   const p=D.products.find(x=>String(x.name)===String(name));
   if(!p)return toast("عدد المنتجات المحملة: "+D.products.length);
   addToCart(p.id);
+}
 async function addToCart(id){
   id=String(id);
 
@@ -289,7 +305,7 @@ async function addToCart(id){
   }
 
   if(qty>maxQty){
-    return toast('الحد الأقصى المسموح لك هو '+maxQty);
+    return toast('الحد الأقصى المسموح لك هو '+maxQty+' قطعة');
   }
 
   let item=cart.find(x=>String(x.id)===id);
@@ -300,9 +316,11 @@ async function addToCart(id){
     cart.push({id:id,qty:qty});
   }
 
+  save();
   toast('تمت إضافة المنتج للسلة 🛒');
   render();
 }
+
 function changeQty(id,n){
   id=String(id);
   n=Number(n);
@@ -323,7 +341,7 @@ function changeQty(id,n){
   }
 
   if(nextQty>maxQty){
-    return toast('الحد الأقصى المسموح لك هو '+maxQty);
+    return toast('الحد الأقصى المسموح لك هو '+maxQty+' قطعة');
   }
 
   item.qty=nextQty;
@@ -331,9 +349,12 @@ function changeQty(id,n){
   save();
   render();
 }
+
 function cartPage(){
-let items=cart.map(x=>({...x,p:D.products.find(p=>String(p.id)===String(x.id))}))
-.filter(x=>x.p);
+let items=cart.map(x=>({
+  ...x,
+  p:D.products.find(p=>String(p.id)===String(x.id))
+})).filter(x=>x.p);
 
 let total=items.reduce((s,x)=>s+Number(x.p.price||0)*Number(x.qty||0),0);
 
@@ -348,9 +369,7 @@ ${items.map(x=>`
 </div>
 
 <div class=qty>
-<button type="button" onclick="changeQty(${Number(x.id)},-1)">−</button>
-<b>${Number(x.qty)}</b>
-<button type="button" onclick="changeQty(${Number(x.id)},1)">+</button>
+<b>الكمية: ${Number(x.qty)}</b>
 </div>
 
 <strong>${Number(x.p.price||0)*Number(x.qty||0)} ج</strong>
@@ -371,13 +390,15 @@ ${items.map(x=>`
 <button type="button" class="primary wide" onclick="sendOrder()">إرسال الطلب</button>
 `)
 }
+
+ 
 async function sendOrder(){
-  if(!client) return toast('يجب تسجيل الدخول أولاً');
-  if(!cart.length) return toast('السلة فارغة 🛒');
+  if(!client)return toast('يجب تسجيل الدخول أولاً');
+  if(!cart.length)return toast('السلة فارغة 🛒');
 
   const items=cart.map(x=>{
     const p=D.products.find(p=>String(p.id)===String(x.id));
-    if(!p) return null;
+    if(!p)return null;
 
     const qty=Number(x.qty)||1;
     const price=Number(p.price)||0;
@@ -391,26 +412,28 @@ async function sendOrder(){
     };
   }).filter(Boolean);
 
-  if(!items.length) return toast('لا توجد منتجات صالحة في السلة');
+  if(!items.length)return toast('لا توجد منتجات صالحة في السلة');
 
   const total=items.reduce((sum,item)=>sum+item.total,0);
 
-  const {data:order,error:orderError}=await supabaseClient
+  const orderId=crypto.randomUUID();
+
+  const {error:orderError}=await supabaseClient
     .from('orders')
     .insert({
+      id:orderId,
       client_id:client.id,
       total:total,
       status:'جديد'
-    })
-    .select()
-    .single();
+    });
 
   if(orderError){
-    return toast('تعذر حفظ الطلب: '+orderError.message);
+    console.log('ORDER ERROR:',orderError);
+    return toast('تعذر نقل الطلبية للإدارة:\\n'+orderError.message);
   }
 
   const rows=items.map(item=>({
-    order_id:order.id,
+    order_id:orderId,
     product_id:item.product_id,
     product_name:item.product_name,
     qty:item.qty,
@@ -423,24 +446,55 @@ async function sendOrder(){
     .insert(rows);
 
   if(itemsError){
+    console.log('ITEMS ERROR:',itemsError);
+
     await supabaseClient
       .from('orders')
       .delete()
-      .eq('id',order.id);
+      .eq('id',orderId);
 
-    return toast('تعذر حفظ منتجات الطلب: '+itemsError.message);
+    return toast('الرسالة: '+(itemsError.message||'')+' | الكود: '+(itemsError.code||'')+' | التفاصيل: '+(itemsError.details||'')+' | التلميح: '+(itemsError.hint||''));
   }
 
   cart=[];
   save();
-  render();
 
-  toast('تم إرسال الطلب بنجاح ✅');
+  toast('تم نقل الطلبية إلى الإدارة بنجاح ✅');
+
+  setPage('orders');
 }
 function orders(){let os=D.orders.filter(o=>o.clientId===client.id).reverse();return pageBox('طلباتي','جديد ← قيد التجهيز ← خرج للتوصيل ← تم التسليم',os.map(o=>`<div class=order><b>${o.id}</b> <span class=status>${o.status}</span><p>${o.items.map(i=>{let p=D.products.find(p=>p.id===i.productId);return esc(p?.name||'صنف')+' × '+i.qty}).join('، ')}</p><strong>${o.total} جنيه</strong></div>`).join('')||'<p>لسه مفيش طلبات.</p>')}
-function missing(){return pageBox('اطلب الصنف الناقص','اكتب أي صنف مش موجود.',`<form class=form onsubmit="miss(event)"><label>اسم الصنف<input id=mn required placeholder="مثال: شامبو كلير"></label><button class="primary wide">إرسال</button></form><div class=adminList>${D.missing.filter(x=>x.clientId===client.id).reverse().map(x=>`<div class=adminCard><b>${esc(x.name)}</b><span class=status>${x.status}</span></div>`).join('')}</div>`)}function miss(e){e.preventDefault();D.missing.push({id:Date.now(),clientId:client.id,clientName:client.name,business:client.business,name:mn.value,status:'جديد'});save();toast('تم إرسال طلب الصنف الناقص');render()}
+function missing(){return pageBox('اطلب الصنف الناقص','اكتب أي صنف مش موجود.',`<form class=form onsubmit="miss(event)"><label>اسم الصنف<input id=mn required placeholder="مثال: شامبو كلير"></label><button class="primary wide">إرسال</button></form><div class=adminList>${D.missing.filter(x=>x.clientId===client.id).reverse().map(x=>`<div class=adminCard><b>${esc(x.name)}</b><span class=status>${x.status}</span></div>`).join('')}</div>`)}async function miss(e){
+  e.preventDefault();
+
+  if(!client)return toast('يجب تسجيل الدخول أولاً');
+
+  const name=String(mn.value||'').trim();
+
+  if(!name)return toast('اكتب اسم الصنف');
+
+  const {error}=await supabaseClient
+    .from('missing_items')
+    .insert({
+      client_id:client.id,
+      client_name:client.name||'',
+      business:client.business||'',
+      name:name,
+      status:'جديد'
+    });
+
+  if(error){
+    return toast('تعذر إرسال الصنف الناقص: '+error.message);
+  }
+
+  toast('تم إرسال الصنف الناقص للإدارة ✅');
+  mn.value='';
+  render();
+}
 function videos(){return pageBox('فيديوهات كايرو كير','الفيديوهات التي أضافتها الإدارة.',`<div class=videoGrid>${D.videos.map(v=>`<div class=videoCard>${v.type==='video'?`<video class=video controls src="${v.url}"></video>`:`<a href="${v.url}" target="_blank">فتح الفيديو</a>`}<h3>${esc(v.title)}</h3></div>`).join('')||'<p>لا توجد فيديوهات.</p>'}</div>`)}
-function adminLogin(){return pageBox('دخول الإدارة','عاصم والمديرون المضافون.',`<form class=form><label>اسم المدير<input id=an></label><label>الرمز<input id=ac type=password></label><button type=button class=primary onclick="doAdmin()">دخول الإدارة</button></form>`)}function doAdmin(){let a=D.admins.find(x=>x.name===an.value&&x.code===ac.value);if(!a)return toast('اسم المدير أو الرمز غير صحيح');admin=a;setPage('admin')}
+function adminLogin(){return pageBox('دخول الإدارة','عاصم والمديرون المضافون.',`<form class=form><label>اسم المدير<input id=an></label><label>الرمز<input id=ac type=password></label><button type=button class=primary onclick="doAdmin()">دخول الإدارة</button></form>`)}
+function doAdmin(){let a=D.admins.find(x=>x.name===an.value&&x.code===ac.value);if(!a)return toast('اسم المدير أو الرمز غير صحيح');admin=a;setPage('admin')}
+
 let atab='clients';function can(k){return admin?.owner||admin?.permissions?.[k]}function adminPage(){if(!can(atab))atab=['clients','orders','products','videos','missing','settings','admins'].find(can)||'clients';let tabs=[['clients','العملاء'],['orders','الطلبات'],['products','المنتجات'],['videos','الفيديوهات'],['missing','الأصناف الناقصة'],['settings','الإعدادات'],['admins','المديرين']].filter(x=>can(x[0]));return pageBox('لوحة الإدارة — '+esc(admin.name),admin.owner?'عاصم لديه كل الصلاحيات':'صلاحياتك محددة من عاصم',`<div class=adminTabs>${tabs.map(x=>`<button class="chip ${atab===x[0]?'active':''}" onclick="atab='${x[0]}';render()">${x[1]}</button>`).join('')}</div>${adminTabBody()}`)}function adminTabBody(){if(atab==='clients')return clientsAdmin();if(atab==='orders')return ordersAdmin();if(atab==='products')return productsAdmin();if(atab==='videos')return videosAdmin();if(atab==='missing')return missingAdmin();if(atab==='settings')return settingsAdmin();return managersAdmin()}
 function clientsAdmin(){let q=document.getElementById('cq')?.value||'';let cs=D.clients.filter(c=>(c.name+' '+c.phone+' '+c.business).includes(q));return `<button class="primary wide" onclick="loadRemoteClients()">🔄 تحديث العملاء من قاعدة البيانات</button><input id=cq class=search value="${esc(q)}" oninput="render()" placeholder="🔎 ابحث عن العميل"><div class=adminList>${cs.map(c=>{let os=D.orders.filter(o=>o.clientId===c.id);let max=Number(c.maxQty)||12;return `<div class=adminCard><div><b>${esc(c.name)}</b><p>${esc(c.business)} — ${c.activity}</p><small>${c.phone} — ${esc(c.address)}</small><p>عدد الطلبات: ${os.length} | إجمالي المسحوب: ${os.reduce((s,o)=>s+o.total,0)} جنيه</p>${admin.owner?`<div style="margin-top:12px;padding:12px;background:#fff3e6;border-radius:12px"><label style="display:block;font-weight:bold">الحد الأقصى للكمية لكل صنف<input id="maxqty_${c.id}" type="number" min="1" value="${max}" style="width:100%;padding:10px;margin-top:6px;box-sizing:border-box"></label><button class="primary" style="margin-top:8px" onclick="saveClientMaxQty('${c.id}')">💾 حفظ الكمية</button></div>`:''}</div><div><span class=status>${c.status}</span>${admin.owner&&c.status==='pending'?`<div style="margin-top:12px;display:flex;gap:8px"><button class="primary" onclick="approve('${c.id}')">✅ قبول</button><button class="danger" onclick="reject('${c.id}')">❌ رفض</button></div>`:''}</div></div>`}).join('')}</div>`}async function saveClientMaxQty(id){
   const input=document.getElementById('maxqty_'+id);
@@ -465,6 +519,54 @@ function clientsAdmin(){let q=document.getElementById('cq')?.value||'';let cs=D.
   save();
   toast('تم حفظ حد الكمية للعميل ✅');
   render();
+}
+
+async function loadRemoteOrders(){
+  const {data,error}=await supabaseClient
+    .from('orders')
+    .select('*')
+    .order('created_at',{ascending:false});
+
+  if(error){
+    return toast('تعذر تحميل الطلبات: '+error.message);
+  }
+
+  D.orders=(data||[]).map(o=>({
+    id:o.id,
+    clientId:o.client_id,
+    total:Number(o.total||0),
+    status:o.status||'جديد',
+    createdAt:o.created_at||''
+  }));
+
+  save();
+  render();
+  toast('تم تحديث الطلبات بنجاح ✅');
+}
+
+async function loadRemoteMissingItems(){
+  const {data,error}=await supabaseClient
+    .from('missing_items')
+    .select('*')
+    .order('created_at',{ascending:false});
+
+  if(error){
+    return toast('تعذر تحميل الأصناف الناقصة: '+error.message);
+  }
+
+  D.missing=(data||[]).map(m=>({
+    id:m.id,
+    clientId:m.client_id,
+    clientName:m.client_name||'',
+    business:m.business||'',
+    name:m.name||'',
+    status:m.status||'جديد',
+    createdAt:m.created_at||''
+  }));
+
+  save();
+  render();
+  toast('تم تحديث الأصناف الناقصة بنجاح ✅');
 }
 
 async function loadRemoteClients(){
@@ -525,7 +627,52 @@ async function reject(id){
   toast('تم رفض العميل');
   render();
 }
-function ordersAdmin(){return `<div class=adminList>${D.orders.slice().reverse().map(o=>`<div class=adminCard><div><b>${o.id}</b><p>${D.clients.find(c=>c.id===o.clientId)?.name||'عميل'} — ${o.total} جنيه</p></div><select onchange="statusOrder(${o.id?o.id:0},this.value)" data-id="${o.id}"><option ${o.status==='جديد'?'selected':''}>جديد</option><option ${o.status==='قيد التجهيز'?'selected':''}>قيد التجهيز</option><option ${o.status==='خرج للتوصيل'?'selected':''}>خرج للتوصيل</option><option ${o.status==='تم التسليم'?'selected':''}>تم التسليم</option><option ${o.status==='ملغي'?'selected':''}>ملغي</option></select></div>`).join('')}</div>`}function statusOrder(_,v){let el=event.target,o=D.orders.find(x=>x.id===el.dataset.id);if(o){o.status=v;save()}}
+function ordersAdmin(){
+  let os=(D.orders||[]).slice().reverse();
+
+  return `<div style="margin-bottom:12px">
+    <button class="primary wide" onclick="loadRemoteOrders()">🔄 تحديث الطلبات من قاعدة البيانات</button>
+  </div>
+  <div class=adminList>
+    ${os.length ? os.map(o=>{
+      let c=D.clients.find(x=>String(x.id)===String(o.clientId));
+
+      return `<div class=adminCard>
+        <div>
+          <b>طلب #${String(o.id).slice(0,8)}</b>
+          <p>${esc(c?.name||'عميل')}${c?.business?' — '+esc(c.business):''}</p>
+          <p>الإجمالي: <strong>${Number(o.total||0)} جنيه</strong></p>
+          <p>الحالة: <span class=status>${esc(o.status||'جديد')}</span></p>
+        </div>
+
+        <select onchange="updateRemoteOrderStatus('${o.id}',this.value)">
+          ${['جديد','قيد التجهيز','خرج للتوصيل','تم التسليم','ملغي']
+            .map(st=>`<option ${o.status===st?'selected':''}>${st}</option>`).join('')}
+        </select>
+      </div>`;
+    }).join('') : '<div class="adminCard">لا توجد طلبات حتى الآن.</div>'}
+  </div>`;
+}
+
+async function updateRemoteOrderStatus(id,status){
+  const {error}=await supabaseClient
+    .from('orders')
+    .update({status:status})
+    .eq('id',id);
+
+  if(error){
+    return toast('تعذر تحديث حالة الطلب: '+error.message);
+  }
+
+  toast('تم تحديث حالة الطلب ✅');
+  render();
+}
+
+async function refreshAdminOrders(){
+  toast('جاري تحديث الطلبات...');
+  render();
+}
+
 function productsAdmin(){return `<div class=adminForm><label>اسم المنتج<input id=pn></label><label>الفئة<input id=pc></label><label>الوصف<input id=pd></label><label>السعر<input id=pp type=number></label><label>الكمية بالمخزن (للإدارة فقط)<input id=ps type=number></label><label>صورة المنتج<input id=pi type=file accept="image/*" onchange="fileData(this,x=>window.pimg=x)"></label><button class=primary onclick="addProductAdmin()">إضافة المنتج</button></div><div class=adminList>${D.products.map(p=>`<div class=adminCard>${p.image?`<img class=thumb src="${p.image}">`:''}<div><b>${esc(p.name)}</b><p>${p.price} جنيه — المخزون: ${p.stock}</p><small>${esc(p.description)}</small></div><button onclick="toggleProduct(${p.id})">${p.active===false?'إظهار':'إخفاء'}</button></div>`).join('')}</div>`}async function addProductAdmin(){
   if(!pn.value||!pp.value||ps.value==='')return toast('اكتب الاسم والسعر والكمية');
 
@@ -590,7 +737,47 @@ function productsAdmin(){return `<div class=adminForm><label>اسم المنتج
   toast('تم إضافة المنتج والصورة بنجاح ✅');
 }function toggleProduct(id){let p=D.products.find(x=>x.id===id);p.active=p.active===false;save();render()}
 function videosAdmin(){return `<div class=adminForm><label>اسم الفيديو<input id=vn></label><label>الفيديو من المعرض<input type=file accept="video/*" onchange="fileData(this,x=>{window.vurl=x;window.vtype='video'})"></label><label>أو رابط فيديو<input id=vu></label><button class=primary onclick="addVideoAdmin()">إضافة الفيديو</button></div><div class=videoGrid>${D.videos.map(v=>`<div class=videoCard>${v.type==='video'?`<video class=video controls src="${v.url}"></video>`:`<a href="${v.url}" target="_blank">فتح الفيديو</a>`}<h3>${esc(v.title)}</h3></div>`).join('')}</div>`}function addVideoAdmin(){let url=window.vurl||vu.value;if(!vn.value||!url)return toast('اختار فيديو أو ضع رابطًا');D.videos.push({id:Date.now(),title:vn.value,url,type:window.vtype||'link'});window.vurl='';save();render()}
-function missingAdmin(){return `<div class=adminList>${D.missing.slice().reverse().map(m=>`<div class=adminCard><div><b>${esc(m.name)}</b><p>${esc(m.clientName)} — ${esc(m.business)}</p></div><select onchange="mstatus(${m.id},this.value)"><option ${m.status==='جديد'?'selected':''}>جديد</option><option ${m.status==='تم توفيره'?'selected':''}>تم توفيره</option><option ${m.status==='غير متوفر'?'selected':''}>غير متوفر</option></select></div>`).join('')}</div>`}function mstatus(id,v){D.missing.find(x=>x.id===id).status=v;save()}
+function missingAdmin(){
+  let ms=(D.missing||[]).slice().reverse();
+
+  return `<div style="margin-bottom:12px">
+    <button class="primary wide" onclick="loadRemoteMissingItems()">🔄 تحديث الأصناف الناقصة من قاعدة البيانات</button>
+  </div>
+  <div class=adminList>
+    ${ms.length ? ms.map(m=>`
+      <div class=adminCard>
+        <div>
+          <b>${esc(m.name||'')}</b>
+          <p>${esc(m.clientName||'عميل')} — ${esc(m.business||'')}</p>
+          <span class=status>${esc(m.status||'جديد')}</span>
+        </div>
+        <select onchange="updateMissingStatus('${m.id}',this.value)">
+          ${['جديد','تم توفيره','غير متوفر']
+            .map(st=>`<option ${m.status===st?'selected':''}>${st}</option>`).join('')}
+        </select>
+      </div>
+    `).join('') : '<div class="adminCard">لا توجد أصناف ناقصة.</div>'}
+  </div>`;
+}
+
+async function refreshMissingItems(){
+  render();
+}
+
+async function updateMissingStatus(id,status){
+  const {error}=await supabaseClient
+    .from('missing_items')
+    .update({status:status})
+    .eq('id',id);
+
+  if(error){
+    return toast('تعذر تحديث الحالة: '+error.message);
+  }
+
+  toast('تم تحديث حالة الصنف ✅');
+  render();
+}
+
 function settingsAdmin(){return `<form class=form><label>اسم الشركة<input id=sc value="${esc(D.settings.company)}"></label><label>الجملة<input id=ss value="${esc(D.settings.slogan)}"></label><label>واتساب والشكاوى<input id=sw value="${D.settings.whatsapp}"></label><label>إنستجرام/التحويل<input id=si value="${D.settings.instagram}"></label><label>خلفية الموقع من المعرض<input type=file accept="image/*" onchange="fileData(this,x=>window.bg=x)"></label><button type=button class=primary onclick="saveSettings()">حفظ الإعدادات</button></form>`}async function saveSettings(){
   Object.assign(D.settings,{
     company:sc.value,
