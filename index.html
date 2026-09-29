@@ -465,7 +465,7 @@ async function sendOrder(){
 }
 function orders(){
   let os=(D.orders||[]).filter(o=>String(o.clientId)===String(client.id)).reverse();
-  return pageBox('طلباتي','جديد ← قيد التجهيز ← خرج للتوصيل ← تم التسليم',`<button class="primary wide" onclick="loadClientOrders()">🔄 تحديث حالة الطلب</button>`+
+  return pageBox('طلباتي','جديد ← قيد التجهيز ← خرج للتوصيل ← تم التسليم',`<button class="primary wide" onclick="refreshClientOrderStatus()">🔄 تحديث حالة الطلب</button>`+
     os.map(o=>`<div class=order>
       <b>طلب #${String(o.id).slice(0,8)}</b>
       <span class=status>${esc(o.status||'جديد')}</span>
@@ -536,6 +536,17 @@ async function openClientOrders(){
   await loadClientOrders();
   setPage('orders');
 }
+async function refreshClientOrderStatus(){
+  toast('جاري تحديث حالة الطلب...');
+
+  if(typeof loadClientOrders==='function'){
+    await loadClientOrders();
+    toast('تم تحديث حالة الطلب من قاعدة البيانات ✅');
+  }else{
+    toast('دالة تحديث الطلبات غير موجودة');
+  }
+}
+
 async function loadClientOrders(){
   if(!client)return;
 
