@@ -100,7 +100,7 @@ function back(){
     render();
   }
 }function esc(x=''){return String(x).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}function fileData(input,cb){let f=input.files[0];if(!f)return;let r=new FileReader();r.onload=()=>cb(r.result);r.readAsDataURL(f)}
-function header(){return `<div class=top><button class=brand onclick="setPage('home')"><span class=logo>CC</span><span><b>${esc(D.settings.company)}</b><small>${esc(D.settings.slogan)}</small></span></button><div class=nav>${page!='home'?'<button onclick="back()">↩ رجوع</button>':''}${client?`<button onclick="setPage('shop')">العروض</button><button onclick="setPage('orders')">طلباتي</button><button onclick="setPage('missing')">الصنف الناقص</button><button onclick="setPage('videos')">الفيديوهات</button>`:''}${admin?'<button onclick="setPage(\'admin\')">لوحة الإدارة</button>':''}${!client&&!admin?'<button onclick="setPage(\'adminLogin\')">دخول الإدارة</button>':''}</div>${client||admin?'<button class=outline onclick="logout()">خروج</button>':''}</div>`}function pageBox(title,sub,body){return `<main class=page><h1>${title}</h1><p>${sub||''}</p>${body}</main>`}
+function header(){return `<div class=top><button class=brand onclick="setPage('home')"><span class=logo>CC</span><span><b>${esc(D.settings.company)}</b><small>${esc(D.settings.slogan)}</small></span></button><div class=nav>${page!='home'?'<button onclick="back()">↩ رجوع</button>':''}${client?`<button onclick="setPage('shop')">العروض</button><button onclick="openClientOrders()">طلباتي</button><button onclick="setPage('missing')">الصنف الناقص</button><button onclick="setPage('videos')">الفيديوهات</button>`:''}${admin?'<button onclick="setPage(\'admin\')">لوحة الإدارة</button>':''}${!client&&!admin?'<button onclick="setPage(\'adminLogin\')">دخول الإدارة</button>':''}</div>${client||admin?'<button class=outline onclick="logout()">خروج</button>':''}</div>`}function pageBox(title,sub,body){return `<main class=page><h1>${title}</h1><p>${sub||''}</p>${body}</main>`}
 function home(){return `<main class=hero><section><b>توزيع مستحضرات التجميل</b><h1>${esc(D.settings.company)}</h1><h2>${esc(D.settings.slogan)}</h2><p>سجّل حسابك، وبعد موافقة الإدارة تصفّح العروض واطلب براحتك وتابع طلبك حتى التسليم.</p><div class=actions><button class=primary onclick="setPage('login')">دخول</button><button class=secondary onclick="setPage('register')">إنشاء حساب</button></div><p>📞 الشكاوى: ${esc(D.settings.whatsapp)} • 📸 التحويل: ${esc(D.settings.instagram)}</p></section><section class=heroCard><div class=circle>CC</div><h2>أهلاً بك في كايرو كير</h2><p>صيدليات • سناتر • كوافيرات</p><small>الحسابات الجديدة تظل تحت المراجعة حتى موافقة الإدارة.</small></section></main>`}
 function toggleBusinessField(){
   const individual=document.getElementById('ract')?.value==='عميل فردي';
@@ -463,7 +463,17 @@ async function sendOrder(){
 
   setPage('orders');
 }
-function orders(){let os=D.orders.filter(o=>o.clientId===client.id).reverse();return pageBox('طلباتي','جديد ← قيد التجهيز ← خرج للتوصيل ← تم التسليم',os.map(o=>`<div class=order><b>${o.id}</b> <span class=status>${o.status}</span><p>${o.items.map(i=>{let p=D.products.find(p=>p.id===i.productId);return esc(p?.name||'صنف')+' × '+i.qty}).join('، ')}</p><strong>${o.total} جنيه</strong></div>`).join('')||'<p>لسه مفيش طلبات.</p>')}
+function orders(){
+  let os=(D.orders||[]).filter(o=>String(o.clientId)===String(client.id)).reverse();
+  return pageBox('طلباتي','جديد ← قيد التجهيز ← خرج للتوصيل ← تم التسليم',`<button class="primary wide" onclick="loadClientOrders()">🔄 تحديث حالة الطلب</button>`+
+    os.map(o=>`<div class=order>
+      <b>طلب #${String(o.id).slice(0,8)}</b>
+      <span class=status>${esc(o.status||'جديد')}</span>
+      <p>${(o.items||[]).map(i=>esc(i.name||'صنف')+' × '+Number(i.qty||1)).join('، ')}</p>
+      <strong>${Number(o.total||0)} جنيه</strong>
+    </div>`).join('')||'<p>لسه مفيش طلبات.</p>'
+  );
+}
 function missing(){return pageBox('اطلب الصنف الناقص','اكتب أي صنف مش موجود.',`<form class=form onsubmit="miss(event)"><label>اسم الصنف<input id=mn required placeholder="مثال: شامبو كلير"></label><button class="primary wide">إرسال</button></form><div class=adminList>${D.missing.filter(x=>x.clientId===client.id).reverse().map(x=>`<div class=adminCard><b>${esc(x.name)}</b><span class=status>${x.status}</span></div>`).join('')}</div>`)}async function miss(e){
   e.preventDefault();
 
@@ -518,6 +528,61 @@ function clientsAdmin(){let q=document.getElementById('cq')?.value||'';let cs=D.
 
   save();
   toast('تم حفظ حد الكمية للعميل ✅');
+  render();
+}
+
+
+async function openClientOrders(){
+  await loadClientOrders();
+  setPage('orders');
+}
+async function loadClientOrders(){
+  if(!client)return;
+
+  const {data:ordersData,error:ordersError}=await supabaseClient
+    .from('orders')
+    .select('*')
+    .eq('client_id',client.id)
+    .order('created_at',{ascending:false});
+
+  if(ordersError){
+    return toast('تعذر تحميل طلباتك: '+ordersError.message);
+  }
+
+  const orderIds=(ordersData||[]).map(o=>o.id);
+
+  let itemsData=[];
+  if(orderIds.length){
+    const {data,error}=await supabaseClient
+      .from('order_items')
+      .select('*')
+      .in('order_id',orderIds);
+
+    if(error){
+      return toast('تعذر تحميل تفاصيل الطلبات: '+error.message);
+    }
+
+    itemsData=data||[];
+  }
+
+  D.orders=(ordersData||[]).map(o=>({
+    id:o.id,
+    clientId:o.client_id,
+    total:Number(o.total||0),
+    status:o.status||'جديد',
+    createdAt:o.created_at||'',
+    items:itemsData
+      .filter(i=>String(i.order_id)===String(o.id))
+      .map(i=>({
+        productId:i.product_id,
+        name:i.product_name||'',
+        qty:Number(i.qty||1),
+        price:Number(i.price||0),
+        total:Number(i.total||0)
+      }))
+  }));
+
+  save();
   render();
 }
 
@@ -655,17 +720,27 @@ function ordersAdmin(){
 }
 
 async function updateRemoteOrderStatus(id,status){
-  const {error}=await supabaseClient
+  const {data,error}=await supabaseClient
     .from('orders')
     .update({status:status})
-    .eq('id',id);
+    .eq('id',id)
+    .select('id,status')
+    .single();
 
   if(error){
     return toast('تعذر تحديث حالة الطلب: '+error.message);
   }
 
-  toast('تم تحديث حالة الطلب ✅');
+  if(!data || data.status!==status){
+    return toast('الحالة لم يتم حفظها في قاعدة البيانات');
+  }
+
+  const order=D.orders.find(o=>String(o.id)===String(id));
+  if(order) order.status=data.status;
+
+  save();
   render();
+  toast('تم حفظ حالة الطلب في قاعدة البيانات ✅');
 }
 
 async function refreshAdminOrders(){
