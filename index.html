@@ -464,13 +464,17 @@ async function sendOrder(){
   setPage('orders');
 }
 function orders(){
-  let os=(D.orders||[]).filter(o=>String(o.clientId)===String(client.id)).reverse();
-  return pageBox('طلباتي','جديد ← قيد التجهيز ← خرج للتوصيل ← تم التسليم',`<button class="primary wide" onclick="refreshClientOrderStatus()">🔄 تحديث حالة الطلب</button>`+
+  let os=(D.orders||[]).filter(o=>String(o.clientId)===String(client.id));
+  return pageBox('طلباتي','جديد ← قيد التجهيز ← خرج للتوصيل ← تم التسليم',
+`<button class="primary wide" onclick="location.reload()">🔄 تحديث الصفحة</button>
+<div style="height:10px"></div>
+<button class="primary wide" onclick="refreshClientOrderStatus()">🔄 تحديث الطلبات</button>`+
     os.map(o=>`<div class=order>
       <b>طلب #${String(o.id).slice(0,8)}</b>
       <span class=status>${esc(o.status||'جديد')}</span>
       <p>${(o.items||[]).map(i=>esc(i.name||'صنف')+' × '+Number(i.qty||1)).join('، ')}</p>
       <strong>${Number(o.total||0)} جنيه</strong>
+      <p>📅 التاريخ والوقت: ${formatOrderDateTime(o.createdAt)}</p>
     </div>`).join('')||'<p>لسه مفيش طلبات.</p>'
   );
 }
@@ -537,14 +541,75 @@ async function openClientOrders(){
   setPage('orders');
 }
 async function refreshClientOrderStatus(){
-  toast('جاري تحديث حالة الطلب...');
+  toast('جاري تحديث الطلبات...');
 
-  if(typeof loadClientOrders==='function'){
-    await loadClientOrders();
-    toast('تم تحديث حالة الطلب من قاعدة البيانات ✅');
-  }else{
-    toast('دالة تحديث الطلبات غير موجودة');
+  if(!client || !client.id){
+    return toast('لا يوجد عميل مسجل الدخول');
   }
+
+  const {data:ordersData,error:ordersError}=await supabaseClient
+    .from('orders')
+    .select('*')
+    .eq('client_id',client.id)
+    .order('created_at',{ascending:false});
+
+  if(ordersError){
+    return toast('تعذر تحديث الطلبات: '+ordersError.message);
+  }
+
+  const orderIds=(ordersData||[]).map(o=>o.id);
+  let itemsData=[];
+
+  if(orderIds.length){
+    const {data,error}=await supabaseClient
+      .from('order_items')
+      .select('*')
+      .in('order_id',orderIds);
+
+    if(error){
+      return toast('تعذر تحميل تفاصيل الطلبات: '+error.message);
+    }
+
+    itemsData=data||[];
+  }
+
+  D.orders=(ordersData||[]).map(o=>({
+    id:o.id,
+    clientId:o.client_id,
+    total:Number(o.total||0),
+    status:o.status||'جديد',
+    createdAt:o.created_at||'',
+    items:itemsData
+      .filter(i=>String(i.order_id)===String(o.id))
+      .map(i=>({
+        productId:i.product_id,
+        name:i.product_name||'',
+        qty:Number(i.qty||1),
+        price:Number(i.price||0),
+        total:Number(i.total||0)
+      }))
+  }));
+
+  save();
+
+  page='orders';
+  render();
+
+  toast('تم تحديث الطلبات من قاعدة البيانات ✅');
+}
+
+function formatOrderDateTime(v){
+  if(!v) return 'غير محدد';
+  const d=new Date(v);
+  if(isNaN(d.getTime())) return 'غير محدد';
+  return d.toLocaleString('ar-EG',{
+    timeZone:'Africa/Cairo',
+    year:'numeric',
+    month:'2-digit',
+    day:'2-digit',
+    hour:'2-digit',
+    minute:'2-digit'
+  });
 }
 
 async function loadClientOrders(){
@@ -598,26 +663,51 @@ async function loadClientOrders(){
 }
 
 async function loadRemoteOrders(){
-  const {data,error}=await supabaseClient
+  const {data:ordersData,error:ordersError}=await supabaseClient
     .from('orders')
     .select('*')
     .order('created_at',{ascending:false});
 
-  if(error){
-    return toast('تعذر تحميل الطلبات: '+error.message);
+  if(ordersError){
+    return toast('تعذر تحميل الطلبات: '+ordersError.message);
   }
 
-  D.orders=(data||[]).map(o=>({
+  const orderIds=(ordersData||[]).map(o=>o.id);
+  let itemsData=[];
+
+  if(orderIds.length){
+    const {data,error}=await supabaseClient
+      .from('order_items')
+      .select('*')
+      .in('order_id',orderIds);
+
+    if(error){
+      return toast('تعذر تحميل تفاصيل الطلبات: '+error.message);
+    }
+
+    itemsData=data||[];
+  }
+
+  D.orders=(ordersData||[]).map(o=>({
     id:o.id,
     clientId:o.client_id,
     total:Number(o.total||0),
     status:o.status||'جديد',
-    createdAt:o.created_at||''
+    createdAt:o.created_at||'',
+    items:itemsData
+      .filter(i=>String(i.order_id)===String(o.id))
+      .map(i=>({
+        productId:i.product_id,
+        name:i.product_name||'',
+        qty:Number(i.qty||1),
+        price:Number(i.price||0),
+        total:Number(i.total||0)
+      }))
   }));
 
   save();
   render();
-  toast('تم تحديث الطلبات بنجاح ✅');
+  toast('تم تحديث الطلبات وتفاصيلها بنجاح ✅');
 }
 
 async function loadRemoteMissingItems(){
@@ -704,10 +794,10 @@ async function reject(id){
   render();
 }
 function ordersAdmin(){
-  let os=(D.orders||[]).slice().reverse();
+  let os=(D.orders||[]);
 
   return `<div style="margin-bottom:12px">
-    <button class="primary wide" onclick="loadRemoteOrders()">🔄 تحديث الطلبات من قاعدة البيانات</button>
+    <button class="primary wide" onclick="toast('TEST');loadRemoteOrders()">🔄 تحديث الطلبات</button>
   </div>
   <div class=adminList>
     ${os.length ? os.map(o=>{
@@ -719,6 +809,8 @@ function ordersAdmin(){
           <p>${esc(c?.name||'عميل')}${c?.business?' — '+esc(c.business):''}</p>
           <p>الإجمالي: <strong>${Number(o.total||0)} جنيه</strong></p>
           <p>الحالة: <span class=status>${esc(o.status||'جديد')}</span></p>
+
+<p>📅 التاريخ والوقت: ${formatOrderDateTime(o.createdAt)}</p>
         </div>
 
         <select onchange="updateRemoteOrderStatus('${o.id}',this.value)">
